@@ -34,6 +34,12 @@ const bothSheets = {
   communities: () => csv(COMMUNITIES_CSV),
 };
 
+/** 最初の `failures` 回だけ 500 を返し、以降は `body` を返す。リトライの検証用。 */
+function flaky(body: string, failures: number): () => Response {
+  let seen = 0;
+  return () => (seen++ < failures ? new Response("boom", { status: 500 }) : csv(body));
+}
+
 /** KV への書き込みは ctx.waitUntil 経由なので、反映されるまで待つ。 */
 async function waitForLastGood(): Promise<LastGood> {
   for (let attempt = 0; attempt < 50; attempt += 1) {
@@ -149,6 +155,45 @@ describe("その他のルーティング", () => {
     expect(response.status).toBe(405);
     expect(await response.json()).toEqual({ error: "method_not_allowed" });
     expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
+  });
+});
+
+describe("上流のリトライ", () => {
+  it("1回失敗しても、やり直して成功すれば fresh を返す", async () => {
+    stubUpstream({ ...bothSheets, timetable: flaky(TIMETABLE_CSV, 1) });
+    const response = await request(TIMETABLE_URL);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("X-Timetable-Stale")).toBeNull();
+    await waitForLastGood();
+  });
+
+  it("2回失敗しても3回目で成功すれば fresh を返す", async () => {
+    stubUpstream({ ...bothSheets, timetable: flaky(TIMETABLE_CSV, 2) });
+    const response = await request(TIMETABLE_URL);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("X-Timetable-Stale")).toBeNull();
+    await waitForLastGood();
+  });
+
+  it("3回とも失敗したら上流失敗として扱う", async () => {
+    stubUpstream({ ...bothSheets, timetable: flaky(TIMETABLE_CSV, 3) });
+    const response = await request(TIMETABLE_URL);
+    expect(response.status).toBe(502);
+  });
+
+  it("シートごとに3回まで試行する", async () => {
+    stubUpstream({});
+    await request(TIMETABLE_URL);
+    // 2シート × 3回
+    expect(vi.mocked(globalThis.fetch)).toHaveBeenCalledTimes(6);
+  });
+
+  it("成功したシートは張り直さない", async () => {
+    stubUpstream({ ...bothSheets, timetable: flaky(TIMETABLE_CSV, 1) });
+    await request(TIMETABLE_URL);
+    // timetable が 2 回、communities が 1 回
+    expect(vi.mocked(globalThis.fetch)).toHaveBeenCalledTimes(3);
+    await waitForLastGood();
   });
 });
 

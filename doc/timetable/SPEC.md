@@ -45,7 +45,7 @@ Google スプレッドシート1冊を編集元とし、Cloudflare Workers が�
 | `SHEET_PUB_BASE`        | `https://docs.google.com/spreadsheets/d/e/<pubid>/pub` | 「ウェブに公開」で得られる URL の `?` より前 |
 | `SHEET_GID_TIMETABLE`   | `0`                                                    | タイムテーブルシートの `gid`                 |
 | `SHEET_GID_COMMUNITIES` | `1223957092`                                           | コミュニティシートの `gid`                   |
-| `UPSTREAM_TIMEOUT_MS`   | `5000`                                                 | Google への fetch タイムアウト               |
+| `UPSTREAM_TIMEOUT_MS`   | `3000`                                                 | Google への fetch タイムアウト（1回あたり）  |
 | `CACHE_TTL_SECONDS`     | `60`                                                   | エッジキャッシュの TTL                       |
 
 各シートの CSV URL は `${SHEET_PUB_BASE}?gid=${gid}&single=true&output=csv` で組み立てる。
@@ -99,6 +99,8 @@ KV バインディング: `LAST_GOOD`（namespace は任意名）。
 
 - タイムテーブルシートとコミュニティシートの CSV を**並行に** `fetch` する。それぞれ `cf: { cacheTtl: CACHE_TTL_SECONDS, cacheEverything: true }` を付け、`AbortSignal.timeout(UPSTREAM_TIMEOUT_MS)` で打ち切る
 - Google はリダイレクトを返すことがある。`redirect: "follow"` で追従する
+- **各シートの取得は最大3回試行する。**エッジから Google への取得は 2 割程度の頻度で応答が返らず、タイムアウトに当たる（本番と `wrangler dev --remote` の双方で実測）。成功時は 1 秒未満で返るので、間を置かず張り直す。1回あたりのタイムアウトを短くし、回数で吸収する
+- リトライしたときは `console.warn` に `upstream_retry` を出す。3回とも失敗して初めて上流失敗として扱う（§7）
 - 非 2xx、タイムアウト、本文が空、または先頭行に必須列が揃っていないとき、上流失敗として扱う（§7）
 - **どちらか一方でも失敗したら全体を上流失敗とする。**片方だけで組み立てたレスポンスは返さない（コミュニティ名はタイムテーブルシート側に無いため、コミュニティシートを欠いた縮退表示が成立しない）
 

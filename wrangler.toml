@@ -17,7 +17,7 @@ SHEET_PUB_BASE = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREbaa4b6lD8Sj
 # 各シートの gid。スプレッドシートのタブを切り替えたときの URL 末尾 #gid=... で確認できる
 SHEET_GID_TIMETABLE = "0"
 SHEET_GID_COMMUNITIES = "1223957092"
-UPSTREAM_TIMEOUT_MS = 5000
+UPSTREAM_TIMEOUT_MS = 3000
 CACHE_TTL_SECONDS = 60
 
 # `wrangler kv namespace create LAST_GOOD` で作成
