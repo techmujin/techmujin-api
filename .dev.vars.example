@@ -1,0 +1,7 @@
+# wrangler dev はこのファイルの値で wrangler.toml の [vars] を上書きする。
+# 既定（このファイルを置かない、または下をコメントのままにする）では
+# wrangler.toml の SHEET_PUB_BASE、つまり本物の公開シートを見に行く。
+#
+# `pnpm run serve:fixture` で立てたローカルの CSV に向けたいときだけ、
+# このファイルを .dev.vars にコピーして次の行を有効にする。
+# SHEET_PUB_BASE="http://127.0.0.1:8788/pub"

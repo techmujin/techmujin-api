@@ -1,0 +1,17 @@
+{
+  // 公開契約を単独でビルドする設定。Cloudflare のランタイム型も DOM も読み込まないので、
+  // schema.ts がそれらに依存し始めたらこの時点で落ちる（フロント側の環境の再現）。
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "types": [],
+    "strict": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "files": ["src/schema.ts"]
+}

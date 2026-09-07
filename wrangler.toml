@@ -1,0 +1,26 @@
+name = "timetable"
+main = "src/index.ts"
+# @cloudflare/vitest-pool-workers 0.22.0 が同梱する workerd の上限。上げるとテストが起動しない
+compatibility_date = "2026-08-22"
+
+[observability]
+enabled = true
+
+[vars]
+EVENT_ID = "techmujin-2026"
+EVENT_TITLE = "テック無尽 2026"
+EVENT_DATE = "2026-11-22"
+EVENT_TIMEZONE = "Asia/Tokyo"
+EVENT_VENUE = "山梨大学 甲府キャンパス 共創環境棟 治ホール"
+EVENT_URL = ""
+SHEET_PUB_BASE = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREbaa4b6lD8SjaHftOLMlYkyxISLFgPETXyPugscMua54gKDLcjX7K7hDncdhBIwxmlz37ToEg74lJ/pub"
+# 各シートの gid。スプレッドシートのタブを切り替えたときの URL 末尾 #gid=... で確認できる
+SHEET_GID_TIMETABLE = "0"
+SHEET_GID_COMMUNITIES = "1223957092"
+UPSTREAM_TIMEOUT_MS = 5000
+CACHE_TTL_SECONDS = 60
+
+# `wrangler kv namespace create LAST_GOOD` で作成
+[[kv_namespaces]]
+binding = "LAST_GOOD"
+id = "587b19dca307474cbf88af15098f3aba"

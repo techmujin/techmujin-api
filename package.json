@@ -1,0 +1,56 @@
+{
+  "name": "techmujin-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
+    "check": "pnpm run type-check && pnpm run lint && pnpm run format && pnpm run check:types",
+    "serve:fixture": "node scripts/serve-fixture.mjs",
+    "build:types": "tsc -p tsconfig.schema.json",
+    "check:types": "node scripts/check-types-drift.mjs"
+  },
+  "dependencies": {
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.22.0",
+    "@eslint/js": "9.39.5",
+    "eslint": "9.39.5",
+    "eslint-config-prettier": "10.1.8",
+    "globals": "^17.12.0",
+    "prettier": "3.6.2",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.69.0",
+    "vitest": "4.1.11",
+    "wrangler": "4.129.0"
+  },
+  "description": "テック無尽 2026 タイムテーブル配信 API と、そのレスポンスの型定義",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/techmujin/techmujin-api.git"
+  },
+  "types": "./dist/schema.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/schema.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src/schema.ts"
+  ],
+  "sideEffects": false
+}
