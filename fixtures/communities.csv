@@ -1,0 +1,13 @@
+﻿name, id ,note,url,icon,description
+テック無尽実行委員会,techmujin-committee,,https://example.com/techmujin,https://example.com/icons/techmujin.png,実行委員会のダミー説明。
+甲府.rb,kofu-rb,複数 Session から参照される。改行と引用符を含む description,https://example.com/kofurb,https://example.com/icons/kofurb.png,"## 甲府.rb
+
+- Ruby, その周辺
+- ""毎月""開催"
+YamanashiJS,yamanashi-js,url と description が空。null になる,,https://example.com/icons/yamanashijs.png,
+HTTPアイコンのコミュニティ,http-icon,url と icon で許容スキームが違うことの検証,http://example.com/insecure,http://example.com/icons/insecure.png,url は http でも採用、icon は https のみ
+参照されないコミュニティ,unused-community,,https://example.com/unused,https://example.com/icons/unused.png,どの Session からも参照されないが、警告もエラーも出ない。
+IDが不正なコミュニティ,Bad_ID,除外される,,,
+   ,no-name,name が空なので除外される,,,
+古い名前（差し替え前）,dup,後の行に同じ id があるので除外される,,,
+新しい名前（差し替え後）,dup,id 重複は後勝ち。ただしどこからも参照されない,https://example.com/dup,,

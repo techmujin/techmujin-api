@@ -1,0 +1,273 @@
+{
+  "schemaVersion": 1,
+  "version": "000000000000",
+  "updatedAt": "2026-11-01T00:00:00+09:00",
+  "event": {
+    "id": "techmujin-2026",
+    "title": "テック無尽 2026",
+    "date": "2026-11-22",
+    "timezone": "Asia/Tokyo",
+    "venue": "山梨大学 甲府キャンパス 共創環境棟 治ホール",
+    "url": null
+  },
+  "sessions": [
+    {
+      "id": "doors",
+      "kind": "free",
+      "group": null,
+      "title": "開場",
+      "startsAt": "2026-11-22T08:45:00+09:00",
+      "endsAt": "2026-11-22T09:30:00+09:00",
+      "communities": [],
+      "speakers": [],
+      "descriptionMarkdown": null,
+      "message": "受付は共創環境棟 1F です",
+      "isCancelled": false,
+      "links": []
+    },
+    {
+      "id": "reception",
+      "kind": "free",
+      "group": null,
+      "title": "受付・交流",
+      "startsAt": "2026-11-22T09:30:00+09:00",
+      "endsAt": "2026-11-22T10:00:00+09:00",
+      "communities": [],
+      "speakers": [],
+      "descriptionMarkdown": null,
+      "message": null,
+      "isCancelled": false,
+      "links": []
+    },
+    {
+      "id": "opening",
+      "kind": "session",
+      "group": "全体",
+      "title": "オープニング",
+      "startsAt": "2026-11-22T10:00:00+09:00",
+      "endsAt": "2026-11-22T10:15:00+09:00",
+      "communities": [],
+      "speakers": [],
+      "descriptionMarkdown": null,
+      "message": null,
+      "isCancelled": false,
+      "links": []
+    },
+    {
+      "id": "session-a",
+      "kind": "session",
+      "group": "Aトラック",
+      "title": "基調講演, これからの山梨のテックコミュニティ",
+      "startsAt": "2026-11-22T10:15:00+09:00",
+      "endsAt": "2026-11-22T11:00:00+09:00",
+      "communities": [
+        {
+          "id": "techmujin-committee",
+          "name": "テック無尽実行委員会",
+          "url": "https://example.com/techmujin",
+          "iconUrl": "https://example.com/icons/techmujin.png",
+          "descriptionMarkdown": "実行委員会のダミー説明。"
+        }
+      ],
+      "speakers": [
+        {
+          "name": "山田 太郎",
+          "iconUrl": "https://example.com/icons/yamada.png"
+        },
+        {
+          "name": "鈴木 花子",
+          "iconUrl": null
+        },
+        {
+          "name": "佐藤 次郎",
+          "iconUrl": null
+        }
+      ],
+      "descriptionMarkdown": "## 概要\n\n- 山梨のコミュニティ, その現在地\n- \"越境\"をキーワードに\n  インデントされた行",
+      "message": null,
+      "isCancelled": false,
+      "links": [
+        {
+          "label": "資料",
+          "url": "https://example.com/slides/session-a"
+        },
+        {
+          "label": "https://example.com/sessions/session-a",
+          "url": "https://example.com/sessions/session-a"
+        }
+      ]
+    },
+    {
+      "id": "break-1",
+      "kind": "break",
+      "group": null,
+      "title": "休憩",
+      "startsAt": "2026-11-22T11:00:00+09:00",
+      "endsAt": "2026-11-22T11:10:00+09:00",
+      "communities": [],
+      "speakers": [],
+      "descriptionMarkdown": null,
+      "message": null,
+      "isCancelled": false,
+      "links": []
+    },
+    {
+      "id": "session-b",
+      "kind": "session",
+      "group": "Aトラック",
+      "title": "LT大会",
+      "startsAt": "2026-11-22T11:10:00+09:00",
+      "endsAt": "2026-11-22T11:55:00+09:00",
+      "communities": [
+        {
+          "id": "kofu-rb",
+          "name": "甲府.rb",
+          "url": "https://example.com/kofurb",
+          "iconUrl": "https://example.com/icons/kofurb.png",
+          "descriptionMarkdown": "## 甲府.rb\n\n- Ruby, その周辺\n- \"毎月\"開催"
+        },
+        {
+          "id": "yamanashi-js",
+          "name": "YamanashiJS",
+          "url": null,
+          "iconUrl": "https://example.com/icons/yamanashijs.png",
+          "descriptionMarkdown": null
+        }
+      ],
+      "speakers": [
+        {
+          "name": "田中 三郎",
+          "iconUrl": null
+        }
+      ],
+      "descriptionMarkdown": null,
+      "message": "登壇者の都合により中止になりました",
+      "isCancelled": true,
+      "links": []
+    },
+    {
+      "id": "lunch",
+      "kind": "break",
+      "group": null,
+      "title": "ランチ休憩",
+      "startsAt": "2026-11-22T12:00:00+09:00",
+      "endsAt": "2026-11-22T13:00:00+09:00",
+      "communities": [],
+      "speakers": [],
+      "descriptionMarkdown": null,
+      "message": null,
+      "isCancelled": false,
+      "links": []
+    },
+    {
+      "id": "session-c",
+      "kind": "session",
+      "group": "Bトラック",
+      "title": "新タイトル（差し替え後）",
+      "startsAt": "2026-11-22T13:00:00+09:00",
+      "endsAt": "2026-11-22T13:45:00+09:00",
+      "communities": [
+        {
+          "id": "http-icon",
+          "name": "HTTPアイコンのコミュニティ",
+          "url": "http://example.com/insecure",
+          "iconUrl": null,
+          "descriptionMarkdown": "url は http でも採用、icon は https のみ"
+        }
+      ],
+      "speakers": [
+        {
+          "name": "高橋 四郎",
+          "iconUrl": "https://example.com/icons/takahashi.png"
+        }
+      ],
+      "descriptionMarkdown": "登壇者の都合でタイトルを差し替えた回。",
+      "message": null,
+      "isCancelled": false,
+      "links": [
+        {
+          "label": "https://example.com/sessions/session-c",
+          "url": "https://example.com/sessions/session-c"
+        }
+      ]
+    },
+    {
+      "id": "session-d",
+      "kind": "session",
+      "group": "Bトラック",
+      "title": "パネルディスカッション",
+      "startsAt": "2026-11-22T14:00:00+09:00",
+      "endsAt": "2026-11-22T14:45:00+09:00",
+      "communities": [
+        {
+          "id": "kofu-rb",
+          "name": "甲府.rb",
+          "url": "https://example.com/kofurb",
+          "iconUrl": "https://example.com/icons/kofurb.png",
+          "descriptionMarkdown": "## 甲府.rb\n\n- Ruby, その周辺\n- \"毎月\"開催"
+        }
+      ],
+      "speakers": [
+        {
+          "name": "山田 太郎",
+          "iconUrl": "https://example.com/icons/yamada.png"
+        },
+        {
+          "name": "田中 三郎",
+          "iconUrl": null
+        }
+      ],
+      "descriptionMarkdown": null,
+      "message": null,
+      "isCancelled": false,
+      "links": []
+    },
+    {
+      "id": "free-time",
+      "kind": "free",
+      "group": null,
+      "title": "コミュニケーションタイム",
+      "startsAt": "2026-11-22T14:45:00+09:00",
+      "endsAt": "2026-11-22T15:30:00+09:00",
+      "communities": [],
+      "speakers": [],
+      "descriptionMarkdown": null,
+      "message": "ホール後方でご歓談ください",
+      "isCancelled": false,
+      "links": []
+    },
+    {
+      "id": "wide",
+      "kind": "session",
+      "group": "全体",
+      "title": "ロングセッション",
+      "startsAt": "2026-11-22T16:30:00+09:00",
+      "endsAt": "2026-11-22T18:00:00+09:00",
+      "communities": [],
+      "speakers": [
+        {
+          "name": "鈴木 花子",
+          "iconUrl": "https://example.com/icons/suzuki.png"
+        }
+      ],
+      "descriptionMarkdown": null,
+      "message": null,
+      "isCancelled": false,
+      "links": []
+    },
+    {
+      "id": "closing",
+      "kind": "session",
+      "group": "全体",
+      "title": "クロージング",
+      "startsAt": "2026-11-22T18:00:00+09:00",
+      "endsAt": "2026-11-22T18:15:00+09:00",
+      "communities": [],
+      "speakers": [],
+      "descriptionMarkdown": null,
+      "message": null,
+      "isCancelled": false,
+      "links": []
+    }
+  ]
+}
