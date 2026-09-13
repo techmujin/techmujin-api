@@ -16,8 +16,9 @@ export type SessionKind = "session" | "break" | "free";
 export type SessionType = "opening" | "talk" | "lt" | "sponsor" | "closing" | null;
 
 /**
- * トラックの識別子。表示名ではなく機械可読な ID で、`group` の表示文字列とは独立している。
- * 全体進行やトラックを持たない枠、未知の値のときは null。
+ * トラックの識別子。並行して走る会場・配信の系統を指す。
+ * シングルトラックの回では全 Session が同じ値になるか、そもそも空欄になる。
+ * トラックを持たない枠と、未知の値のときは null。
  */
 export type TrackId = "track-a" | "track-b" | null;
 
@@ -54,9 +55,13 @@ export type Session = {
   kind: SessionKind;
   /** `kind` をさらに細分する内容の分類。未設定・未知の値なら null */
   type: SessionType;
-  /** トラック名など、画面に出す表示用の文字列。未設定なら null */
+  /**
+   * 発表のまとまり（「コミュニティ紹介」「スポンサーLT」など）を表す見出し。
+   * 運営が自由に名付ける表示用の文字列で、連続する Session をひと続きの
+   * ブロックとして見せるために使う。トラックとは無関係。未設定なら null
+   */
   group: string | null;
-  /** 機械可読なトラック ID。振り分けや絞り込みにはこちらを使う。未設定・未知の値なら null */
+  /** 機械可読なトラック ID。並行トラックの振り分けに使う。未設定・未知の値なら null */
   trackId: TrackId;
   title: string;
   /** ISO 8601（+09:00 固定）。例: `2026-11-22T10:15:00+09:00` */

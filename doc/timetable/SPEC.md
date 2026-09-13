@@ -119,7 +119,7 @@ KV バインディング: `LAST_GOOD`（namespace は任意名）。
 | `id`          | 必須 | `^[a-z0-9][a-z0-9-]*$`。不一致は行を除外                                                                                                                               |
 | `kind`        | 必須 | `session` / `break` / `free`。大文字小文字は無視して正規化。それ以外は行を除外                                                                                         |
 | `type`        |      | `opening` / `talk` / `lt` / `sponsor` / `closing`。大文字小文字は無視して正規化。空なら null。未知の値は null にして warn するが、**行は除外しない**                   |
-| `group`       |      | 空なら null。トラック名などの表示用の自由記述                                                                                                                          |
+| `group`       |      | 発表のまとまりの見出し（「コミュニティ紹介」など）。表示用の自由記述。空なら null                                                                                      |
 | `track`       |      | `track-a` / `track-b`。大文字小文字は無視して正規化。空なら null。未知の値は null にして warn するが、**行は除外しない**                                               |
 | `title`       | 必須 | 空なら行を除外                                                                                                                                                         |
 | `start`       | 必須 | `H:mm` または `HH:mm`。`EVENT_DATE` と `+09:00` を組み合わせて ISO 8601 にする。Google が時刻型として `10:15:00` を出すことがあるので、末尾の `:ss` は許容して無視する |
@@ -135,7 +135,11 @@ KV バインディング: `LAST_GOOD`（namespace は任意名）。
 
 `kind` と `type` は別の軸である。`kind` は「枠の性質」（本編か、休憩か、ステージ休止中か）で、フロントの描画そのものを分ける。`type` は「何をする枠か」で、アイコンや色の出し分けに使う。`kind` は必須で読めなければ行を落とすが、`type` は任意で、読めなくても行は残す。
 
-`group` と `track` も別の軸である。`group` は画面に出す表示用の文字列（「Aトラック」「全体」など運営が自由に書く）、`track` は機械可読な ID の閉じた集合。振り分けや絞り込みは `track` を使い、表示は `group` を使う。両方を持つのは、表示名を変えても ID が動かないようにするため。トラックが増えたときは `TrackId` の値を足す変更が必要になる（`group` と違いコードの変更を伴う）。
+`group` と `track` は無関係な軸である。`group` は**発表のまとまり**（「コミュニティ紹介」「スポンサーLT」など）の見出しで、連続する Session をひと続きのブロックとして見せるための表示用の自由記述。`track` は**並行して走る系統**を指す機械可読な ID の閉じた集合。
+
+`track` を足す前は `group` にトラック名（「Aトラック」など）を書く運用だったが、`track` ができたことで `group` の役割は発表のグループ分けに寄った。したがって `group` に「Aトラック」と書いてはいけないし、フロントが `group` をトラック名として扱ってもいけない。両者は独立に空になりうる（全体進行は `group` が空で `track` だけを持ち、セグメント内の休憩は `group` だけを持つ）。
+
+トラックが増えたときは `TrackId` の値を足す変更が必要になる（`group` と違いコードの変更を伴う）。2026 はシングルトラックの見込みで、`track-b` は将来の複数トラック化に備えた枠である。
 
 ### 5-4. Person 記法（`speakers` のみ）
 
@@ -219,8 +223,8 @@ export type Session = {
   id: string;
   kind: SessionKind;
   type: SessionType; // 未設定・未知の値なら null
-  group: string | null; // 表示用の文字列
-  trackId: TrackId; // 機械可読なトラック ID
+  group: string | null; // 発表のまとまりの見出し（表示用）
+  trackId: TrackId; // 並行トラックの ID（機械可読）
   title: string;
   startsAt: string; // ISO 8601 with offset, e.g. "2026-11-22T10:15:00+09:00"
   endsAt: string;
@@ -283,7 +287,7 @@ vitest（workers pool）で以下を最低限カバーする。上流はテス�
 - **時刻**: `9:05` / `09:05` / `09:05:00` を受理、`25:00` と `abc` を除外、`end <= start` を除外
 - **Person**: `名前|https://…` と `名前` の混在、`http://` を null に、空行を捨てる
 - **コミュニティ**: ID が解決されて埋め込まれる、未知の ID は落として Session は残す、同一 Session 内の重複 ID はまとまる、参照されない台帳エントリで warn が出ない、`icon` の `http://` は null、コミュニティシートに必須列が無ければ上流失敗
-- **type / track**: 大文字小文字を問わず正規化、空欄は warn なしで null、未知の値は null にして warn するが行は残る、`group` と `trackId` が独立している
+- **type / track**: 大文字小文字を問わず正規化、空欄は warn なしで null、未知の値は null にして warn するが行は残る、`group` と `trackId` はどちらか一方だけでも成立する
 - **整合性**: `id` 重複は後勝ち、重なりは遅い方を除外、隣接は許容、行順が時間順でなくても並ぶ
 - **version**: 同じ CSV から2回生成しても同じ、1文字変えると変わる、`updatedAt` の違いで変わらない
 - **HTTP**: `If-None-Match` 一致で 304、CORS ヘッダー、OPTIONS が 204、未知パスが 404、eventId 不一致が 404、`POST` が 405

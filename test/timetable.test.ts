@@ -104,10 +104,10 @@ describe("type と trackId", () => {
 
   it("type と track を読んで大文字小文字を問わず正規化する", () => {
     const [session] = parseSessions(
-      withColumns("a,session,t,10:00,11:00,Talk,Aトラック,TRACK-A"),
+      withColumns("a,session,t,10:00,11:00,Talk,コミュニティ紹介,TRACK-A"),
       EVENT.date,
     );
-    expect(session).toMatchObject({ type: "talk", group: "Aトラック", trackId: "track-a" });
+    expect(session).toMatchObject({ type: "talk", group: "コミュニティ紹介", trackId: "track-a" });
   });
 
   it("列が無いときは type も trackId も null にする", () => {
@@ -124,7 +124,7 @@ describe("type と trackId", () => {
 
   it("未知の type は行を残したまま null にして warn する", () => {
     const sessions = parseSessions(
-      withColumns("a,session,t,10:00,11:00,panel,Bトラック,track-b"),
+      withColumns("a,session,t,10:00,11:00,panel,パネル企画,track-b"),
       EVENT.date,
     );
     expect(sessions).toMatchObject([{ id: "a", type: null, trackId: "track-b" }]);
@@ -144,12 +144,23 @@ describe("type と trackId", () => {
     );
   });
 
-  it("group は表示用の文字列のままで、trackId とは独立している", () => {
+  it("group は発表のまとまりの見出しで、trackId とは無関係に読む", () => {
     const [session] = parseSessions(
-      withColumns("a,session,t,10:00,11:00,,全体,track-a"),
+      withColumns("a,session,t,10:00,11:00,talk,コミュニティ紹介,track-a"),
       EVENT.date,
     );
-    expect(session).toMatchObject({ group: "全体", trackId: "track-a" });
+    expect(session).toMatchObject({ group: "コミュニティ紹介", trackId: "track-a" });
+  });
+
+  it("group と track はどちらか一方だけでも成立する", () => {
+    const [onlyTrack] = parseSessions(withColumns("a,session,t,10:00,11:00,,,track-a"), EVENT.date);
+    expect(onlyTrack).toMatchObject({ group: null, trackId: "track-a" });
+
+    const [onlyGroup] = parseSessions(
+      withColumns("b,break,t,10:00,11:00,,コミュニティ紹介,"),
+      EVENT.date,
+    );
+    expect(onlyGroup).toMatchObject({ group: "コミュニティ紹介", trackId: null });
   });
 });
 
