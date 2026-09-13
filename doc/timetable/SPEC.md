@@ -298,7 +298,7 @@ vitest（workers pool）で以下を最低限カバーする。上流はテス�
 - `pnpm dev` = `wrangler dev`、`pnpm test` = `vitest run`、`pnpm deploy` = `wrangler deploy`
 - 型チェックと lint（ESLint + typescript-eslint、Prettier）を `pnpm check` にまとめる
 - KV namespace は `wrangler kv namespace create LAST_GOOD` で作り、id を `wrangler.toml` に書く
-- 本番 URL は `https://timetable.<subdomain>.workers.dev`。カスタムドメインは後回し
+- 本番 URL は `https://techmujin-api.<subdomain>.workers.dev`。カスタムドメインは後回し
 
 ## 11. 範囲外（やらない）
 

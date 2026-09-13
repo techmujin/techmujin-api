@@ -32,7 +32,7 @@ pnpm add -D github:techmujin/techmujin-api
 import type { Community, Session, Timetable } from "techmujin-api";
 
 const response = await fetch(
-  "https://timetable.<subdomain>.workers.dev/v1/events/techmujin-2026/timetable",
+  "https://techmujin-api.<subdomain>.workers.dev/v1/events/techmujin-2026/timetable",
 );
 const timetable = (await response.json()) as Timetable;
 
@@ -253,7 +253,7 @@ pnpm check && pnpm test
 pnpm run deploy
 ```
 
-公開先は `https://timetable.<subdomain>.workers.dev`。カスタムドメインは後回し。
+公開先は `https://techmujin-api.<subdomain>.workers.dev`。カスタムドメインは後回し。
 
 ## 反映されるまでの時間
 
