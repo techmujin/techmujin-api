@@ -1,4 +1,4 @@
-name = "timetable"
+name = "techmujin-api"
 main = "src/index.ts"
 # @cloudflare/vitest-pool-workers 0.22.0 が同梱する workerd の上限。上げるとテストが起動しない
 compatibility_date = "2026-08-22"
