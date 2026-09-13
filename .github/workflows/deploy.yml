@@ -1,0 +1,44 @@
+# main が更新されたら Cloudflare Workers へデプロイする。
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# デプロイ同士は打ち消さず、順番に流す
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  # PR を経由せずに main へ入った変更もあるので、デプロイ前にもう一度検証する
+  checks:
+    uses: ./.github/workflows/checks.yml
+
+  deploy:
+    name: Deploy to Cloudflare Workers
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # `pnpm deploy` は pnpm 組み込みコマンドと衝突するので `pnpm run deploy` で呼ぶ
+      - name: wrangler deploy
+        run: pnpm run deploy
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

@@ -233,13 +233,24 @@ pnpm check   # tsc --noEmit + eslint + prettier --check + 型定義の乖離チ�
 
 `fixtures/timetable.csv` + `fixtures/communities.csv` → `fixtures/sample-response.json` のゴールデンテストが CSV の解釈全体を守っている。仕様を変えるときは、実装より先にこれらのフィクスチャを更新する。
 
+PR を作ると `.github/workflows/ci.yml` が同じ検証（`pnpm check` 相当と `pnpm test`）を GitHub Actions 上で回す。実体は `.github/workflows/checks.yml` にあり、デプロイ時にも同じものが呼ばれる。
+
 ## デプロイ
+
+main が更新されると `.github/workflows/deploy.yml` が走り、検証（lint・型・フォーマット・テスト）を通ったときだけ `wrangler deploy` する。GitHub リポジトリの Secrets に `CLOUDFLARE_ACCOUNT_ID` と `CLOUDFLARE_API_TOKEN` が必要。Actions の画面から手動実行（workflow_dispatch）もできる。
+
+KV ネームスペースの作成だけは手元で一度やる。
 
 ```sh
 pnpm exec wrangler login
 pnpm exec wrangler kv namespace create LAST_GOOD   # 初回のみ。id を wrangler.toml に書く
+```
+
+手元からデプロイする場合は次の通り。`pnpm deploy` は pnpm 組み込みコマンドと衝突するので `pnpm run deploy` で呼ぶ。
+
+```sh
 pnpm check && pnpm test
-pnpm deploy
+pnpm run deploy
 ```
 
 公開先は `https://timetable.<subdomain>.workers.dev`。カスタムドメインは後回し。

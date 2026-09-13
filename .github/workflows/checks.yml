@@ -1,0 +1,58 @@
+# lint / 型 / フォーマット / テストの実体。PR (ci.yml) と main へのデプロイ (deploy.yml) の
+# 双方から呼び出して、検証内容を一箇所に保つ。
+name: Checks
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint & type check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4 # バージョンは package.json の packageManager に従う
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm run type-check
+
+      - name: ESLint
+        run: pnpm run lint
+
+      - name: Prettier
+        run: pnpm run format
+
+      # dist/schema.d.ts はコミットする成果物なので、src/schema.ts との乖離を検出する
+      - name: Public types drift
+        run: pnpm run check:types
+
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Vitest (@cloudflare/vitest-pool-workers)
+        run: pnpm test
