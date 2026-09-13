@@ -40,9 +40,12 @@ const timetable = (await response.json()) as Timetable;
 const names: string[] = timetable.sessions.flatMap((s: Session) =>
   s.communities.map((c: Community) => c.name),
 );
+
+// トラックの振り分けは表示名の group ではなく trackId で行う
+const trackA: Session[] = timetable.sessions.filter((s: Session) => s.trackId === "track-a");
 ```
 
-公開される型は [`src/schema.ts`](src/schema.ts) に定義されている（`SessionKind` / `Person` / `Community` / `Link` / `Session` / `Event` / `Timetable`）。`Env` などバックエンド内部の型は含まれない。
+公開される型は [`src/schema.ts`](src/schema.ts) に定義されている（`SessionKind` / `SessionType` / `TrackId` / `Person` / `Community` / `Link` / `Session` / `Event` / `Timetable`）。`Env` などバックエンド内部の型は含まれない。
 
 値としての import はできない（型しか無い）。必ず `import type` を使うこと。
 
@@ -91,7 +94,9 @@ Worker は `<SHEET_PUB_BASE>?gid=<gid>&single=true&output=csv` を組み立て�
 | ------------- | ---- | ------------------------------------------------------------------------------ |
 | `id`          | ○    | 半角英小文字・数字・ハイフン。先頭はハイフン不可（例: `session-a`）            |
 | `kind`        | ○    | `session` / `break` / `free`。大文字小文字は問わない                           |
-| `group`       |      | トラック名など。空なら `null`                                                  |
+| `type`        |      | `opening` / `talk` / `lt` / `sponsor` / `closing`。大文字小文字は問わない      |
+| `group`       |      | 画面に出すトラック名など。自由記述。空なら `null`                              |
+| `track`       |      | `track-a` / `track-b`。大文字小文字は問わない。空なら `null`                   |
 | `title`       | ○    | 空だとその行は配信されない                                                     |
 | `start`       | ○    | `9:05` / `09:05` / `09:05:00`。日付は `EVENT_DATE`、タイムゾーンは +09:00 固定 |
 | `end`         | ○    | 同上。`end` が `start` 以前だとその行は配信されない                            |
@@ -101,6 +106,15 @@ Worker は `<SHEET_PUB_BASE>?gid=<gid>&single=true&output=csv` を組み立て�
 | `message`     |      | 「中止になりました」などの一言                                                 |
 | `isCancelled` |      | `TRUE` / `true` / `1` / `yes` で true。それ以外は false                        |
 | `links`       |      | セル内改行で1件ずつ `ラベル\|URL`。`\|` がなければ URL のみとみなす            |
+
+`kind` と `type`、`group` と `track` はそれぞれ別の軸なので、両方書ける。
+
+- `kind` は枠の性質（本編 / 休憩 / ステージ休止中）で、必須。読めない行は配信されない
+- `type` は中身の分類（オープニング / 通常セッション / LT / スポンサー / クロージング）で、任意。アイコンや色の出し分けに使う
+- `group` は画面に出す表示用の文字列。「Aトラック」でも「Track A」でも運営の自由
+- `track` はフロントが振り分けに使う ID。表示名を変えても ID は動かない
+
+`type` と `track` は、書いてあるのに一覧に無い値だったときは `null` として配信し、その行自体は残す（`wrangler tail` に `unknown_session_type` / `unknown_track_id` が出る）。トラックを3本以上に増やすときは `track` の値を足す API 側の変更が必要になる。
 
 ### コミュニティシート
 

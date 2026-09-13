@@ -7,7 +7,9 @@ import {
   parseKind,
   parseLinks,
   parsePeople,
+  parseSessionType,
   parseTimeOfDay,
+  parseTrackId,
 } from "../src/parse";
 
 describe("parseTimeOfDay", () => {
@@ -38,6 +40,37 @@ describe("parseKind", () => {
 
   it("未知の種別は null", () => {
     expect(parseKind("keynote")).toBeNull();
+  });
+});
+
+describe("parseSessionType", () => {
+  it.each([
+    ["opening", "opening"],
+    ["talk", "talk"],
+    ["Talk", "talk"],
+    ["LT", "lt"],
+    ["sponsor", "sponsor"],
+    ["closing", "closing"],
+  ])("%s を正規化する", (input, expected) => {
+    expect(parseSessionType(input)).toBe(expected);
+  });
+
+  it.each(["", "panel", "keynote", "session"])("%s は null", (input) => {
+    expect(parseSessionType(input)).toBeNull();
+  });
+});
+
+describe("parseTrackId", () => {
+  it.each([
+    ["track-a", "track-a"],
+    ["TRACK-A", "track-a"],
+    ["Track-B", "track-b"],
+  ])("%s を正規化する", (input, expected) => {
+    expect(parseTrackId(input)).toBe(expected);
+  });
+
+  it.each(["", "track-z", "Aトラック", "a"])("%s は null", (input) => {
+    expect(parseTrackId(input)).toBeNull();
   });
 });
 

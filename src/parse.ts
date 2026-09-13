@@ -1,10 +1,12 @@
-import type { Link, Person, SessionKind } from "./types";
+import type { Link, Person, SessionKind, SessionType, TrackId } from "./types";
 
 const HTTPS_PREFIX = "https://";
 const HTTP_PREFIX = "http://";
 const TIME_PATTERN = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/;
 const ID_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 const KINDS: SessionKind[] = ["session", "break", "free"];
+const TYPES: Exclude<SessionType, null>[] = ["opening", "talk", "lt", "sponsor", "closing"];
+const TRACK_IDS: Exclude<TrackId, null>[] = ["track-a", "track-b"];
 const TRUTHY = new Set(["true", "1", "yes"]);
 
 /** セル内の改行表記を LF に揃える。CSV 側の CRLF がそのまま値に残るため。 */
@@ -20,6 +22,24 @@ export function isValidId(value: string): boolean {
 export function parseKind(value: string): SessionKind | null {
   const normalized = value.toLowerCase();
   return KINDS.find((kind) => kind === normalized) ?? null;
+}
+
+/**
+ * 大文字小文字を無視して SessionType に正規化する。空欄も未知の値も null。
+ * `kind` と違い必須ではないので、読めなくても行は落とさない（呼び出し側で warn する）。
+ */
+export function parseSessionType(value: string): SessionType {
+  const normalized = value.toLowerCase();
+  return TYPES.find((type) => type === normalized) ?? null;
+}
+
+/**
+ * 大文字小文字を無視して TrackId に正規化する。空欄も未知の値も null。
+ * 表示用の `group`（「Aトラック」など自由記述）とは別の列で、こちらは ID の閉じた集合。
+ */
+export function parseTrackId(value: string): TrackId {
+  const normalized = value.toLowerCase();
+  return TRACK_IDS.find((trackId) => trackId === normalized) ?? null;
 }
 
 /**

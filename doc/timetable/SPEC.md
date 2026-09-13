@@ -118,7 +118,9 @@ KV バインディング: `LAST_GOOD`（namespace は任意名）。
 | ------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `id`          | 必須 | `^[a-z0-9][a-z0-9-]*$`。不一致は行を除外                                                                                                                               |
 | `kind`        | 必須 | `session` / `break` / `free`。大文字小文字は無視して正規化。それ以外は行を除外                                                                                         |
-| `group`       |      | 空なら null                                                                                                                                                            |
+| `type`        |      | `opening` / `talk` / `lt` / `sponsor` / `closing`。大文字小文字は無視して正規化。空なら null。未知の値は null にして warn するが、**行は除外しない**                   |
+| `group`       |      | 空なら null。トラック名などの表示用の自由記述                                                                                                                          |
+| `track`       |      | `track-a` / `track-b`。大文字小文字は無視して正規化。空なら null。未知の値は null にして warn するが、**行は除外しない**                                               |
 | `title`       | 必須 | 空なら行を除外                                                                                                                                                         |
 | `start`       | 必須 | `H:mm` または `HH:mm`。`EVENT_DATE` と `+09:00` を組み合わせて ISO 8601 にする。Google が時刻型として `10:15:00` を出すことがあるので、末尾の `:ss` は許容して無視する |
 | `end`         | 必須 | 同上。`end <= start` なら行を除外                                                                                                                                      |
@@ -130,6 +132,10 @@ KV バインディング: `LAST_GOOD`（namespace は任意名）。
 | `links`       |      | 改行区切りで `ラベル\|URL`。`\|` がない行は URL のみとみなしラベル = URL。URL が `https://` または `http://` で始まらない行は捨てる                                    |
 
 ヘッダーに `id` `kind` `title` `start` `end` のいずれかが無い場合は CSV 全体を不正とし、上流失敗として扱う。
+
+`kind` と `type` は別の軸である。`kind` は「枠の性質」（本編か、休憩か、ステージ休止中か）で、フロントの描画そのものを分ける。`type` は「何をする枠か」で、アイコンや色の出し分けに使う。`kind` は必須で読めなければ行を落とすが、`type` は任意で、読めなくても行は残す。
+
+`group` と `track` も別の軸である。`group` は画面に出す表示用の文字列（「Aトラック」「全体」など運営が自由に書く）、`track` は機械可読な ID の閉じた集合。振り分けや絞り込みは `track` を使い、表示は `group` を使う。両方を持つのは、表示名を変えても ID が動かないようにするため。トラックが増えたときは `TrackId` の値を足す変更が必要になる（`group` と違いコードの変更を伴う）。
 
 ### 5-4. Person 記法（`speakers` のみ）
 
@@ -206,11 +212,15 @@ export type Community = {
 };
 
 export type SessionKind = "session" | "break" | "free";
+export type SessionType = "opening" | "talk" | "lt" | "sponsor" | "closing" | null;
+export type TrackId = "track-a" | "track-b" | null;
 
 export type Session = {
   id: string;
   kind: SessionKind;
-  group: string | null;
+  type: SessionType; // 未設定・未知の値なら null
+  group: string | null; // 表示用の文字列
+  trackId: TrackId; // 機械可読なトラック ID
   title: string;
   startsAt: string; // ISO 8601 with offset, e.g. "2026-11-22T10:15:00+09:00"
   endsAt: string;
@@ -273,6 +283,7 @@ vitest（workers pool）で以下を最低限カバーする。上流はテス�
 - **時刻**: `9:05` / `09:05` / `09:05:00` を受理、`25:00` と `abc` を除外、`end <= start` を除外
 - **Person**: `名前|https://…` と `名前` の混在、`http://` を null に、空行を捨てる
 - **コミュニティ**: ID が解決されて埋め込まれる、未知の ID は落として Session は残す、同一 Session 内の重複 ID はまとまる、参照されない台帳エントリで warn が出ない、`icon` の `http://` は null、コミュニティシートに必須列が無ければ上流失敗
+- **type / track**: 大文字小文字を問わず正規化、空欄は warn なしで null、未知の値は null にして warn するが行は残る、`group` と `trackId` が独立している
 - **整合性**: `id` 重複は後勝ち、重なりは遅い方を除外、隣接は許容、行順が時間順でなくても並ぶ
 - **version**: 同じ CSV から2回生成しても同じ、1文字変えると変わる、`updatedAt` の違いで変わらない
 - **HTTP**: `If-None-Match` 一致で 304、CORS ヘッダー、OPTIONS が 204、未知パスが 404、eventId 不一致が 404、`POST` が 405

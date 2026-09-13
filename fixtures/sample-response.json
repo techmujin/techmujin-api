@@ -14,7 +14,9 @@
     {
       "id": "doors",
       "kind": "free",
+      "type": null,
       "group": null,
+      "trackId": null,
       "title": "開場",
       "startsAt": "2026-11-22T08:45:00+09:00",
       "endsAt": "2026-11-22T09:30:00+09:00",
@@ -28,7 +30,9 @@
     {
       "id": "reception",
       "kind": "free",
+      "type": null,
       "group": null,
+      "trackId": null,
       "title": "受付・交流",
       "startsAt": "2026-11-22T09:30:00+09:00",
       "endsAt": "2026-11-22T10:00:00+09:00",
@@ -42,7 +46,9 @@
     {
       "id": "opening",
       "kind": "session",
+      "type": "opening",
       "group": "全体",
+      "trackId": null,
       "title": "オープニング",
       "startsAt": "2026-11-22T10:00:00+09:00",
       "endsAt": "2026-11-22T10:15:00+09:00",
@@ -56,7 +62,9 @@
     {
       "id": "session-a",
       "kind": "session",
+      "type": "talk",
       "group": "Aトラック",
+      "trackId": "track-a",
       "title": "基調講演, これからの山梨のテックコミュニティ",
       "startsAt": "2026-11-22T10:15:00+09:00",
       "endsAt": "2026-11-22T11:00:00+09:00",
@@ -100,7 +108,9 @@
     {
       "id": "break-1",
       "kind": "break",
+      "type": null,
       "group": null,
+      "trackId": null,
       "title": "休憩",
       "startsAt": "2026-11-22T11:00:00+09:00",
       "endsAt": "2026-11-22T11:10:00+09:00",
@@ -114,7 +124,9 @@
     {
       "id": "session-b",
       "kind": "session",
+      "type": "lt",
       "group": "Aトラック",
+      "trackId": "track-a",
       "title": "LT大会",
       "startsAt": "2026-11-22T11:10:00+09:00",
       "endsAt": "2026-11-22T11:55:00+09:00",
@@ -148,7 +160,9 @@
     {
       "id": "lunch",
       "kind": "break",
+      "type": null,
       "group": null,
+      "trackId": null,
       "title": "ランチ休憩",
       "startsAt": "2026-11-22T12:00:00+09:00",
       "endsAt": "2026-11-22T13:00:00+09:00",
@@ -162,7 +176,9 @@
     {
       "id": "session-c",
       "kind": "session",
+      "type": "talk",
       "group": "Bトラック",
+      "trackId": "track-b",
       "title": "新タイトル（差し替え後）",
       "startsAt": "2026-11-22T13:00:00+09:00",
       "endsAt": "2026-11-22T13:45:00+09:00",
@@ -194,7 +210,9 @@
     {
       "id": "session-d",
       "kind": "session",
+      "type": null,
       "group": "Bトラック",
+      "trackId": "track-b",
       "title": "パネルディスカッション",
       "startsAt": "2026-11-22T14:00:00+09:00",
       "endsAt": "2026-11-22T14:45:00+09:00",
@@ -225,7 +243,9 @@
     {
       "id": "free-time",
       "kind": "free",
+      "type": null,
       "group": null,
+      "trackId": null,
       "title": "コミュニケーションタイム",
       "startsAt": "2026-11-22T14:45:00+09:00",
       "endsAt": "2026-11-22T15:30:00+09:00",
@@ -239,7 +259,9 @@
     {
       "id": "wide",
       "kind": "session",
+      "type": "sponsor",
       "group": "全体",
+      "trackId": null,
       "title": "ロングセッション",
       "startsAt": "2026-11-22T16:30:00+09:00",
       "endsAt": "2026-11-22T18:00:00+09:00",
@@ -258,7 +280,9 @@
     {
       "id": "closing",
       "kind": "session",
+      "type": "closing",
       "group": "全体",
+      "trackId": null,
       "title": "クロージング",
       "startsAt": "2026-11-22T18:00:00+09:00",
       "endsAt": "2026-11-22T18:15:00+09:00",
