@@ -1,9 +1,9 @@
-﻿kind, id ,title,start,end,group,speakers,communities,description,message,isCancelled,links,notes
-session, opening , オープニング ,10:00:00,10:15:00,全体,,,,,,,Google が時刻型で出す :ss 付き
-free,doors,開場,08:45,09:30,,,,,受付は共創環境棟 1F です,,,
+﻿kind,type, id ,title,start,end,group,track,speakers,communities,description,message,isCancelled,links,notes
+session,opening, opening , オープニング ,10:00:00,10:15:00,,track-a,,,,,,,group は空でも track は持てる（全体進行）
+free,,doors,開場,08:45,09:30,,,,,,受付は共創環境棟 1F です,,,
 
-free,reception,受付・交流,9:30,10:00,,,,,,,,H:mm 表記
-SESSION,session-a,"基調講演, これからの山梨のテックコミュニティ",10:15,11:00,Aトラック,"山田 太郎|https://example.com/icons/yamada.png
+free,,reception,受付・交流,9:30,10:00,,,,,,,,,H:mm 表記
+SESSION,Talk,session-a,"基調講演, これからの山梨のテックコミュニティ",10:15,11:00,基調講演,track-a,"山田 太郎|https://example.com/icons/yamada.png
 鈴木 花子
 |https://example.com/icons/ghost.png
 佐藤 次郎|http://example.com/icons/sato.png",techmujin-committee,"## 概要
@@ -12,27 +12,27 @@ SESSION,session-a,"基調講演, これからの山梨のテックコミュニ�
 - ""越境""をキーワードに
   インデントされた行",,,"資料|https://example.com/slides/session-a
 https://example.com/sessions/session-a
-不正なリンク|ftp://example.com/x",kind は大文字、隣接（10:15）は重なりではない
-break,break-1,休憩,11:00,11:10,,,,,,,,
-session,session-b,LT大会,11:10,11:55,Aトラック,田中 三郎,"kofu-rb
+不正なリンク|ftp://example.com/x",kind は大文字、隣接（10:15）は重なりではない。type も大文字小文字を問わない
+break,,break-1,休憩,11:00,11:10,,,,,,,,,
+session,lt,session-b,LT大会,11:10,11:55,コミュニティLT,TRACK-A,田中 三郎,"kofu-rb
 yamanashi-js
- kofu-rb ",,登壇者の都合により中止になりました,TRUE,,
-session,Bad_ID,IDが不正な行,12:00,12:30,,,,,,,,除外される
-break,lunch,ランチ休憩,12:00,13:00,,,,,,,,
-keynote,bad-kind,種別が不正な行,13:05,13:10,,,,,,,,除外される
-session,session-c,旧タイトル（差し替え前）,13:00,13:45,Bトラック,,,,,,,後の行に同じ id があるので除外される
-session,no-title,   ,13:50,14:00,,,,,,,,title が空なので除外される
-session,bad-start,開始時刻が範囲外,25:00,25:30,,,,,,,,除外される
-session,bad-start-2,開始時刻が時刻でない,abc,14:30,,,,,,,,除外される
-session,bad-range,終了が開始以前,14:00,14:00,,,,,,,,除外される
-session,session-d,パネルディスカッション,14:00,14:45,Bトラック,"山田 太郎|https://example.com/icons/yamada.png
-田中 三郎",kofu-rb,,,,,
-session,session-c,新タイトル（差し替え後）,13:00,13:45,Bトラック,高橋 四郎|https://example.com/icons/takahashi.png,"no-such-community
+ kofu-rb ",,登壇者の都合により中止になりました,TRUE,,track は大文字でも track-a に正規化される
+session,,Bad_ID,IDが不正な行,12:00,12:30,,,,,,,,,除外される
+break,,lunch,ランチ休憩,12:00,13:00,,,,,,,,,
+keynote,,bad-kind,種別が不正な行,13:05,13:10,,,,,,,,,除外される
+session,talk,session-c,旧タイトル（差し替え前）,13:00,13:45,スポンサーLT,track-b,,,,,,,後の行に同じ id があるので除外される
+session,,no-title,   ,13:50,14:00,,,,,,,,,title が空なので除外される
+session,,bad-start,開始時刻が範囲外,25:00,25:30,,,,,,,,,除外される
+session,,bad-start-2,開始時刻が時刻でない,abc,14:30,,,,,,,,,除外される
+session,,bad-range,終了が開始以前,14:00,14:00,,,,,,,,,除外される
+session,panel,session-d,パネルディスカッション,14:00,14:45,パネル企画,track-b,"山田 太郎|https://example.com/icons/yamada.png
+田中 三郎",kofu-rb,,,,,type が未知の値なので null になるが、行は残る
+session,talk,session-c,新タイトル（差し替え後）,13:00,13:45,スポンサーLT,track-b,高橋 四郎|https://example.com/icons/takahashi.png,"no-such-community
 http-icon
 
   ",登壇者の都合でタイトルを差し替えた回。,,,https://example.com/sessions/session-c,id 重複は後勝ち
-free,free-time,コミュニケーションタイム,14:45,15:30,,,,,ホール後方でご歓談ください,,,
-session,wide,ロングセッション,16:30,18:00,全体,鈴木 花子|https://example.com/icons/suzuki.png,,,,,,
-session,overlap-1,重なるセッション1,17:00,17:30,,,,,,,,wide と重なるので除外される
-session,overlap-2,重なるセッション2,17:45,18:30,,,,,,,,直前に採用した wide と重なるので除外される
-session,closing,クロージング,18:00,18:15,全体,,,,,,,wide の終了と隣接するので採用される
+free,,free-time,コミュニケーションタイム,14:45,15:30,,track-z,,,,ホール後方でご歓談ください,,,track が未知の値なので null になるが、行は残る
+session,sponsor,wide,ロングセッション,16:30,18:00,全体企画,,鈴木 花子|https://example.com/icons/suzuki.png,,,,,,group だけがあり track は空。group はトラック名ではない
+session,,overlap-1,重なるセッション1,17:00,17:30,,,,,,,,,wide と重なるので除外される
+session,,overlap-2,重なるセッション2,17:45,18:30,,,,,,,,,直前に採用した wide と重なるので除外される
+session,closing,closing,クロージング,18:00,18:15,,,,,,,,,wide の終了と隣接するので採用される

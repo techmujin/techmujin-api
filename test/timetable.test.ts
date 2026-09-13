@@ -98,6 +98,72 @@ describe("行の除外", () => {
   });
 });
 
+describe("type と trackId", () => {
+  const withColumns = (...rows: string[]) =>
+    ["id,kind,title,start,end,type,group,track", ...rows].join("\r\n") + "\r\n";
+
+  it("type と track を読んで大文字小文字を問わず正規化する", () => {
+    const [session] = parseSessions(
+      withColumns("a,session,t,10:00,11:00,Talk,コミュニティ紹介,TRACK-A"),
+      EVENT.date,
+    );
+    expect(session).toMatchObject({ type: "talk", group: "コミュニティ紹介", trackId: "track-a" });
+  });
+
+  it("列が無いときは type も trackId も null にする", () => {
+    const [session] = parseSessions(csv("a,session,t,10:00,11:00"), EVENT.date);
+    expect(session).toMatchObject({ type: null, trackId: null });
+  });
+
+  it("空欄のときは warn せずに null にする", () => {
+    // spy はテスト間で積み上がるので、この1件だけを見るために直前で消す
+    warn.mockClear();
+    parseSessions(withColumns("a,session,t,10:00,11:00,,,"), EVENT.date);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("未知の type は行を残したまま null にして warn する", () => {
+    const sessions = parseSessions(
+      withColumns("a,session,t,10:00,11:00,panel,パネル企画,track-b"),
+      EVENT.date,
+    );
+    expect(sessions).toMatchObject([{ id: "a", type: null, trackId: "track-b" }]);
+    expect(warn).toHaveBeenCalledWith(
+      JSON.stringify({ reason: "unknown_session_type", rowNumber: 2, id: "a" }),
+    );
+  });
+
+  it("未知の track は行を残したまま null にして warn する", () => {
+    const sessions = parseSessions(
+      withColumns("a,session,t,10:00,11:00,talk,,track-z"),
+      EVENT.date,
+    );
+    expect(sessions).toMatchObject([{ id: "a", type: "talk", trackId: null }]);
+    expect(warn).toHaveBeenCalledWith(
+      JSON.stringify({ reason: "unknown_track_id", rowNumber: 2, id: "a" }),
+    );
+  });
+
+  it("group は発表のまとまりの見出しで、trackId とは無関係に読む", () => {
+    const [session] = parseSessions(
+      withColumns("a,session,t,10:00,11:00,talk,コミュニティ紹介,track-a"),
+      EVENT.date,
+    );
+    expect(session).toMatchObject({ group: "コミュニティ紹介", trackId: "track-a" });
+  });
+
+  it("group と track はどちらか一方だけでも成立する", () => {
+    const [onlyTrack] = parseSessions(withColumns("a,session,t,10:00,11:00,,,track-a"), EVENT.date);
+    expect(onlyTrack).toMatchObject({ group: null, trackId: "track-a" });
+
+    const [onlyGroup] = parseSessions(
+      withColumns("b,break,t,10:00,11:00,,コミュニティ紹介,"),
+      EVENT.date,
+    );
+    expect(onlyGroup).toMatchObject({ group: "コミュニティ紹介", trackId: null });
+  });
+});
+
 describe("整合性", () => {
   it("id が重複したときは後の行を採用する", () => {
     const sessions = parseSessions(
@@ -155,6 +221,15 @@ describe("version", () => {
     const a = await build(TIMETABLE_CSV, "2026-11-01T00:00:00+09:00");
     const b = await build(TIMETABLE_CSV, "2026-11-02T12:34:56+09:00");
     expect(a.version).toBe(b.version);
+  });
+
+  it("type だけを変えても version が変わる", async () => {
+    const a = await build(TIMETABLE_CSV, "2026-11-01T00:00:00+09:00");
+    const b = await build(
+      TIMETABLE_CSV.replace("session,sponsor,wide,", "session,talk,wide,"),
+      "2026-11-01T00:00:00+09:00",
+    );
+    expect(a.version).not.toBe(b.version);
   });
 
   it("CSV を1文字変えると version が変わる", async () => {

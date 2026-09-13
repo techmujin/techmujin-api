@@ -7,12 +7,14 @@ import {
   parseKind,
   parseLinks,
   parsePeople,
+  parseSessionType,
   parseTimeOfDay,
+  parseTrackId,
   toIsoDateTime,
 } from "./parse";
 import { nullIfBlank, readSheet, warnSkip } from "./sheet";
 import type { RowReader } from "./sheet";
-import type { Community, Event, Session, Timetable } from "./types";
+import type { Community, Event, Session, SessionType, Timetable, TrackId } from "./types";
 import { computeVersion } from "./version";
 
 const REQUIRED_HEADERS = ["id", "kind", "title", "start", "end"] as const;
@@ -30,6 +32,23 @@ function resolveCommunities(cell: string, ledger: CommunityLedger, rowNumber: nu
     }
     return [community];
   });
+}
+
+/**
+ * `type` セルを SessionType にする。必須ではないので、読めなくても行は落とさず null にする。
+ * 空欄は「指定なし」で正常だが、書いてあるのに読めない値は打ち間違いを疑えるよう warn する。
+ */
+function resolveType(cell: string, rowNumber: number, id: string): SessionType {
+  const type = parseSessionType(cell);
+  if (type === null && cell !== "") warnSkip("unknown_session_type", rowNumber, id);
+  return type;
+}
+
+/** `track` セルを TrackId にする。扱いは `type` と同じで、未知の値でも行は残す。 */
+function resolveTrackId(cell: string, rowNumber: number, id: string): TrackId {
+  const trackId = parseTrackId(cell);
+  if (trackId === null && cell !== "") warnSkip("unknown_track_id", rowNumber, id);
+  return trackId;
 }
 
 /** CSV 1行を Session にする。行として成立しないときは理由を warn して null を返す。 */
@@ -74,7 +93,9 @@ function toSession(
   return {
     id,
     kind,
+    type: resolveType(read("type"), rowNumber, id),
     group: nullIfBlank(read("group")),
+    trackId: resolveTrackId(read("track"), rowNumber, id),
     title,
     startsAt: toIsoDateTime(eventDate, start),
     endsAt: toIsoDateTime(eventDate, end),

@@ -9,6 +9,19 @@
 /** 進行の種別。`break` は休憩・転換、`free` は回遊タイムなどステージ休止中の枠。 */
 export type SessionKind = "session" | "break" | "free";
 
+/**
+ * 進行の内容による分類。`kind` が「枠の性質」を表すのに対し、こちらは「何をする枠か」を表す。
+ * シートに書かれていない、または未知の値のときは null。
+ */
+export type SessionType = "opening" | "talk" | "lt" | "sponsor" | "closing" | null;
+
+/**
+ * トラックの識別子。並行して走る会場・配信の系統を指す。
+ * シングルトラックの回では全 Session が同じ値になるか、そもそも空欄になる。
+ * トラックを持たない枠と、未知の値のときは null。
+ */
+export type TrackId = "track-a" | "track-b" | null;
+
 /** 登壇者。Session 固有なので ID を持たず、同じ人物が複数の Session に出ても名寄せしない。 */
 export type Person = {
   name: string;
@@ -40,8 +53,16 @@ export type Link = {
 export type Session = {
   id: string;
   kind: SessionKind;
-  /** トラック名など。未設定なら null */
+  /** `kind` をさらに細分する内容の分類。未設定・未知の値なら null */
+  type: SessionType;
+  /**
+   * 発表のまとまり（「コミュニティ紹介」「スポンサーLT」など）を表す見出し。
+   * 運営が自由に名付ける表示用の文字列で、連続する Session をひと続きの
+   * ブロックとして見せるために使う。トラックとは無関係。未設定なら null
+   */
   group: string | null;
+  /** 機械可読なトラック ID。並行トラックの振り分けに使う。未設定・未知の値なら null */
+  trackId: TrackId;
   title: string;
   /** ISO 8601（+09:00 固定）。例: `2026-11-22T10:15:00+09:00` */
   startsAt: string;

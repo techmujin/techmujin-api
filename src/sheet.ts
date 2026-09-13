@@ -6,7 +6,10 @@ const RAW_COLUMNS = new Set(["description"]);
 
 export class InvalidCsvError extends Error {}
 
-/** 除外した行は理由・行番号・id を添えて残す。wrangler tail で運営が追えるようにするため。 */
+/**
+ * 除外した行と、行は残したまま落とした値を、理由・行番号・id を添えて残す。
+ * wrangler tail で運営が追えるようにするため。どちらなのかは reason で区別する。
+ */
 export function warnSkip(reason: string, rowNumber: number, id: string): void {
   console.warn(JSON.stringify({ reason, rowNumber, id }));
 }
