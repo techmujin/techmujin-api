@@ -1,8 +1,8 @@
 # techmujin-api
 
-テック無尽 2026 のタイムテーブル配信 API。Google スプレッドシートを編集元とし、Cloudflare Workers が検証・整形した JSON を配信する。
+テック無尽 2026 のタイムテーブルとブース一覧の配信 API。Google スプレッドシートを編集元とし、Cloudflare Workers が検証・整形した JSON を配信する。
 
-同じスプレッドシート内の2枚のシート（タイムテーブル / コミュニティ）を読む。タイムテーブルはコミュニティを **ID で参照**し、Worker 側で連結してから返すので、**フロントで結合処理をする必要はない**。
+同じスプレッドシート内の3枚のシート（タイムテーブル / コミュニティ / ブース）を読む。タイムテーブルとブースはコミュニティを **ID で参照**し、Worker 側で連結してから返すので、**フロントで結合処理をする必要はない**。
 
 仕様: [`doc/timetable/SPEC.md`](doc/timetable/SPEC.md)
 
@@ -12,13 +12,15 @@
 | --------- | -------------------------------- | ------------------------------------------------------------------- |
 | `GET`     | `/v1/events/{eventId}/timetable` | タイムテーブル JSON。`eventId` が `EVENT_ID` と一致しないときは 404 |
 | `OPTIONS` | `/v1/events/{eventId}/timetable` | CORS プリフライト。204                                              |
+| `GET`     | `/v1/events/{eventId}/booths`    | ブース一覧 JSON。ブース番号と、出展するコミュニティ（展開済み）     |
+| `OPTIONS` | `/v1/events/{eventId}/booths`    | CORS プリフライト。204                                              |
 | `GET`     | `/healthz`                       | 死活確認。`{"ok":true}`                                             |
 
 - 認証なし・公開情報のみ。`Access-Control-Allow-Origin: *`
 - `ETag` は本文の `version` と同じ値。`If-None-Match` が一致すれば 304
-- 上流が落ちている間は KV に保存した最後の成功分を `X-Timetable-Stale: true` 付きで返す
+- 上流が落ちている間は KV に保存した最後の成功分を `X-Timetable-Stale: true`（ブースは `X-Booths-Stale: true`）付きで返す
 
-レスポンスの形は [`fixtures/sample-response.json`](fixtures/sample-response.json) が実例になっている。
+レスポンスの形は [`fixtures/sample-response.json`](fixtures/sample-response.json)（タイムテーブル）と [`fixtures/sample-booths.json`](fixtures/sample-booths.json)（ブース）が実例になっている。
 
 ## 型定義を使う（フロントエンド・その他のクライアント）
 
@@ -29,7 +31,7 @@ pnpm add -D github:techmujin/techmujin-api
 ```
 
 ```ts
-import type { Community, Session, Timetable } from "techmujin-api";
+import type { Booth, BoothList, Community, Session, Timetable } from "techmujin-api";
 
 const response = await fetch(
   "https://techmujin-api.<subdomain>.workers.dev/v1/events/techmujin-2026/timetable",
@@ -43,9 +45,17 @@ const names: string[] = timetable.sessions.flatMap((s: Session) =>
 
 // トラックの振り分けは trackId で行う（group は発表のまとまりの見出しであってトラック名ではない）
 const trackA: Session[] = timetable.sessions.filter((s: Session) => s.trackId === "track-a");
+
+// ブース一覧も同じくコミュニティは展開済み
+const boothList = (await (
+  await fetch("https://techmujin-api.<subdomain>.workers.dev/v1/events/techmujin-2026/booths")
+).json()) as BoothList;
+const labels: string[] = boothList.booths.map(
+  (b: Booth) => `${b.number}: ${b.communities.map((c) => c.name).join(" / ")}`,
+);
 ```
 
-公開される型は [`src/schema.ts`](src/schema.ts) に定義されている（`SessionKind` / `SessionType` / `TrackId` / `Person` / `Community` / `Link` / `Session` / `Event` / `Timetable`）。`Env` などバックエンド内部の型は含まれない。
+公開される型は [`src/schema.ts`](src/schema.ts) に定義されている（`SessionKind` / `SessionType` / `TrackId` / `Person` / `Community` / `Link` / `Session` / `Event` / `Timetable` / `Booth` / `BoothList`）。`Env` などバックエンド内部の型は含まれない。
 
 値としての import はできない（型しか無い）。必ず `import type` を使うこと。
 
@@ -78,15 +88,22 @@ pnpm install
 
 ### gid の調べ方
 
-スプレッドシートで対象のシートのタブをクリックすると、ブラウザの URL 末尾が `#gid=1223957092` に変わる。その数字が `gid`。`wrangler.toml` の `SHEET_GID_TIMETABLE` / `SHEET_GID_COMMUNITIES` に設定する。
+スプレッドシートで対象のシートのタブをクリックすると、ブラウザの URL 末尾が `#gid=1223957092` に変わる。その数字が `gid`。`wrangler.toml` の `SHEET_GID_TIMETABLE` / `SHEET_GID_COMMUNITIES` / `SHEET_GID_BOOTHS` に設定する。
 
 Worker は `<SHEET_PUB_BASE>?gid=<gid>&single=true&output=csv` を組み立てて取得する。`gid` と `single=true` を省略した URL は「公開シートが1枚だけ」という状態に暗黙に依存するので、必ず `gid` を指定すること。
 
-「ウェブに公開」を止めると API は上流失敗として扱い、KV の最後の成功分を返し続ける。**2枚のうち片方でも取得に失敗すると全体が stale になる**（コミュニティ名はタイムテーブルシート側に無いため、片方だけでは組み立てられない）。
+「ウェブに公開」を止めると API は上流失敗として扱い、KV の最後の成功分を返し続ける。各エンドポイントが読むシートは次の通りで、**読むシートのうち1枚でも取得に失敗するとそのエンドポイント全体が stale になる**（コミュニティ名はタイムテーブル・ブースのシート側に無いため、片方だけでは組み立てられない）。
+
+| エンドポイント | 読むシート                   |
+| -------------- | ---------------------------- |
+| `timetable`    | タイムテーブル、コミュニティ |
+| `booths`       | ブース、コミュニティ         |
+
+ブースシートが壊れてもタイムテーブルには影響しない（逆も同じ）。コミュニティシートが壊れると両方が stale になる。
 
 ## シートの列
 
-どちらのシートも1行目をヘッダーとし、**列は名前で引く**ので順序は自由。知らない列は無視される。
+どのシートも1行目をヘッダーとし、**列は名前で引く**ので順序は自由。知らない列は無視される。
 
 ### タイムテーブルシート
 
@@ -128,7 +145,7 @@ Worker は `<SHEET_PUB_BASE>?gid=<gid>&single=true&output=csv` を組み立て�
 | `icon`        |      | アイコン画像。**`https://` で始まるものだけ**採用                          |
 | `description` |      | Markdown。セル内改行をそのまま書ける                                       |
 
-タイムテーブルシートの `communities` 列にこの `id` を書くと、API が中身を連結して返す。
+タイムテーブルシートとブースシートの `communities` 列にこの `id` を書くと、API が中身を連結して返す。
 
 ```
 kofu-rb
@@ -137,9 +154,24 @@ houtou-pm
 
 - 同じセルに同じ `id` を複数回書いても1つにまとめられる
 - コミュニティシートに無い `id` はその1件だけ落ち、セッション自体は残る（`wrangler tail` に `unknown_community_id` が出る）
-- どのセッションからも参照されないコミュニティがあっても、警告もエラーも出ない
+- どのセッションやブースからも参照されないコミュニティがあっても、警告もエラーも出ない
 
 `id` は連番ではなくスラッグにすること。連番は行の挿入で意味がずれるうえ、ログを読んでも何のことか分からない（コードは連番も受け付けてしまうので、運用上の取り決めとして守る）。
+
+### ブースシート
+
+| 列            | 必須 | 書き方                                                                  |
+| ------------- | ---- | ----------------------------------------------------------------------- |
+| `number`      | ○    | ブース番号。`1` や `A-1` など自由な文字列。空だとその行は配信されない   |
+| `communities` |      | セル内改行で1件ずつ、コミュニティシートの `id` を書く。相席なら複数書く |
+| `title`       |      | 出展タイトル。空なら `null`                                             |
+| `description` |      | Markdown。セル内改行をそのまま書ける                                    |
+
+- 並び順は**シートの行順**。番号で並べ替えないので、会場の動線順などに並べておける
+- `number` が重複したら後の行が勝ち、後の行の位置に並ぶ（`wrangler tail` に `duplicate_booth_number` が出る）
+- `communities` が空のブース（運営受付など）も配信される。そのときは空配列になる
+- `communities` の扱い（重複はまとめる、未知の `id` はその1件だけ落ちる）はタイムテーブルシートと同じ
+- 1つのコミュニティが複数のブースに出てもよい
 
 ### 登壇者の書き方
 
@@ -171,7 +203,7 @@ pnpm exec wrangler tail --format pretty
 
 デプロイ前に次の2箇所を実際の値に差し替える。
 
-1. `[vars]` の `SHEET_PUB_BASE` と `SHEET_GID_TIMETABLE` / `SHEET_GID_COMMUNITIES`
+1. `[vars]` の `SHEET_PUB_BASE` と `SHEET_GID_TIMETABLE` / `SHEET_GID_COMMUNITIES` / `SHEET_GID_BOOTHS`
 2. `[[kv_namespaces]]` の `id` — 下のコマンドで作った KV namespace の id
 
 ```sh
@@ -196,6 +228,7 @@ pnpm dev
 
 ```sh
 curl -i http://127.0.0.1:8787/v1/events/techmujin-2026/timetable
+curl -i http://127.0.0.1:8787/v1/events/techmujin-2026/booths
 
 # ETag が一致すれば 304
 curl -i -H 'If-None-Match: "<version>"' http://127.0.0.1:8787/v1/events/techmujin-2026/timetable
@@ -216,7 +249,7 @@ pnpm run serve:fixture
 pnpm dev
 ```
 
-ターミナル1 を止めてからもう一度叩くと、KV の最後の成功分が `X-Timetable-Stale: true` 付きで返る。
+ターミナル1 を止めてからもう一度叩くと、KV の最後の成功分が `X-Timetable-Stale: true`（ブースは `X-Booths-Stale: true`）付きで返る。
 
 > `.dev.vars` は `wrangler dev` でのみ読まれ、`wrangler.toml` の `[vars]` を**上書きする**。実シートに戻すときは `.dev.vars` を消すか、`SHEET_PUB_BASE` の行をコメントアウトする。デプロイ先には影響しない。
 
@@ -231,7 +264,7 @@ pnpm check   # tsc --noEmit + eslint + prettier --check + 型定義の乖離チ�
 
 `src/schema.ts` は Cloudflare のランタイム型も DOM 型も参照できない設定（`tsconfig.schema.json`）でビルドされる。バックエンド内部の型が公開契約に紛れ込むと、この時点で失敗する。
 
-`fixtures/timetable.csv` + `fixtures/communities.csv` → `fixtures/sample-response.json` のゴールデンテストが CSV の解釈全体を守っている。仕様を変えるときは、実装より先にこれらのフィクスチャを更新する。
+`fixtures/timetable.csv` + `fixtures/communities.csv` → `fixtures/sample-response.json` と、`fixtures/booths.csv` + `fixtures/communities.csv` → `fixtures/sample-booths.json` のゴールデンテストが CSV の解釈全体を守っている。仕様を変えるときは、実装より先にこれらのフィクスチャを更新する。
 
 PR を作ると `.github/workflows/ci.yml` が同じ検証（`pnpm check` 相当と `pnpm test`）を GitHub Actions 上で回す。実体は `.github/workflows/checks.yml` にあり、デプロイ時にも同じものが呼ばれる。
 

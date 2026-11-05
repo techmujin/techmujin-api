@@ -67,15 +67,33 @@ export type SheetCsvs = {
  * 2枚のシートを並行に取得する。片方でも失敗したら全体を上流失敗として扱う。
  * コミュニティ名はタイムテーブルシート側に無いため、片方だけで組み立てた縮退表示が成立しない（§5-1）。
  */
-export async function fetchSheetCsvs(env: Env): Promise<SheetCsvs> {
+function fetchSheet(env: Env, gid: string | number): Promise<string> {
   const timeoutMs = toNumber(env.UPSTREAM_TIMEOUT_MS, DEFAULT_TIMEOUT_MS);
   const cacheTtl = toNumber(env.CACHE_TTL_SECONDS, DEFAULT_CACHE_TTL_SECONDS);
-  const get = (gid: string | number) =>
-    fetchCsv(csvUrl(env.SHEET_PUB_BASE, gid), timeoutMs, cacheTtl);
+  return fetchCsv(csvUrl(env.SHEET_PUB_BASE, gid), timeoutMs, cacheTtl);
+}
 
+export async function fetchSheetCsvs(env: Env): Promise<SheetCsvs> {
   const [timetable, communities] = await Promise.all([
-    get(env.SHEET_GID_TIMETABLE),
-    get(env.SHEET_GID_COMMUNITIES),
+    fetchSheet(env, env.SHEET_GID_TIMETABLE),
+    fetchSheet(env, env.SHEET_GID_COMMUNITIES),
   ]);
   return { timetable, communities };
+}
+
+export type BoothCsvs = {
+  booths: string;
+  communities: string;
+};
+
+/**
+ * ブースシートとコミュニティシートを並行に取得する。扱いは `fetchSheetCsvs` と同じで、
+ * 片方でも失敗したら全体を上流失敗とする。タイムテーブルシートは取らない。
+ */
+export async function fetchBoothCsvs(env: Env): Promise<BoothCsvs> {
+  const [booths, communities] = await Promise.all([
+    fetchSheet(env, env.SHEET_GID_BOOTHS),
+    fetchSheet(env, env.SHEET_GID_COMMUNITIES),
+  ]);
+  return { booths, communities };
 }

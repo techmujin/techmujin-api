@@ -1,4 +1,10 @@
-import { isValidId, normalizeNewlines, parseHttpUrl, parseIconUrl } from "./parse";
+import {
+  isValidId,
+  normalizeNewlines,
+  parseCommunityIds,
+  parseHttpUrl,
+  parseIconUrl,
+} from "./parse";
 import { InvalidCsvError, nullIfBlank, readSheet, warnSkip } from "./sheet";
 import type { Community } from "./types";
 
@@ -37,6 +43,25 @@ export function parseCommunities(csv: string): CommunityLedger {
   }
 
   return ledger;
+}
+
+/**
+ * `communities` セルの ID を台帳で解決する。タイムテーブルとブースの両シートで共通。
+ * 引けない ID はその1件だけ落とし、行自体は残す（§5-5）。
+ */
+export function resolveCommunities(
+  cell: string,
+  ledger: CommunityLedger,
+  rowNumber: number,
+): Community[] {
+  return parseCommunityIds(cell).flatMap((id) => {
+    const community = ledger.get(id);
+    if (!community) {
+      warnSkip("unknown_community_id", rowNumber, id);
+      return [];
+    }
+    return [community];
+  });
 }
 
 export { InvalidCsvError };
