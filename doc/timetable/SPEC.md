@@ -2,13 +2,15 @@
 
 Google スプレッドシート1冊を編集元とし、Cloudflare Workers が検証・整形した JSON を配信するバックエンドの実装仕様。フロント（Vercel 上の SPA、別担当）は本APIを単純な GET で取得し、localStorage に保存して描画する。
 
-同じスプレッドシート内の2枚のシートを読む。タイムテーブルはコミュニティを **ID で参照**し、Worker 側で連結してから返す。**フロントに結合処理をさせない**ことを設計の前提とする。
+同じスプレッドシート内の3枚のシート（タイムテーブル / コミュニティ / ブース）を読む。タイムテーブルとブースはコミュニティを **ID で参照**し、Worker 側で連結してから返す。**フロントに結合処理をさせない**ことを設計の前提とする。
 
 関連ファイル
 
 - `fixtures/timetable.csv` — タイムテーブルシートを「ウェブに公開 → CSV」した想定の入力。テストの正となる
 - `fixtures/communities.csv` — コミュニティシートの同上
 - `fixtures/sample-response.json` — 上記2つの CSV から生成されるべきレスポンス（`version` と `updatedAt` を除いて完全一致）
+- `fixtures/booths.csv` — ブースシートの同上
+- `fixtures/sample-booths.json` — `booths.csv` と `communities.csv` から生成されるべきブース一覧（同上）
 
 ---
 
@@ -16,7 +18,7 @@ Google スプレッドシート1冊を編集元とし、Cloudflare Workers が�
 
 - 運営がスプレッドシートを編集すると、約60秒以内に API のレスポンスに反映される
 - 認証なし。公開情報のみを扱う
-- 配信するのは T1 ステージの進行（`sessions[]`）と、そこから参照されるコミュニティの情報。ブースやコミュニケーションスペースの時間割、登壇者のプロフィール、画像のホスティングは範囲外
+- 配信するのは T1 ステージの進行（`sessions[]`）、ブースの一覧（`booths[]`、§4・§5-7）、そこから参照されるコミュニティの情報。コミュニケーションスペースの時間割、登壇者のプロフィール、画像のホスティングは範囲外
 - コミュニティの情報は各 Session に**埋め込んで**返す。同じコミュニティが複数の Session に出れば、その回数だけ本文に現れる（重複を許容する）
 - 言語は日本語のみ
 
@@ -45,6 +47,7 @@ Google スプレッドシート1冊を編集元とし、Cloudflare Workers が�
 | `SHEET_PUB_BASE`        | `https://docs.google.com/spreadsheets/d/e/<pubid>/pub` | 「ウェブに公開」で得られる URL の `?` より前 |
 | `SHEET_GID_TIMETABLE`   | `0`                                                    | タイムテーブルシートの `gid`                 |
 | `SHEET_GID_COMMUNITIES` | `1223957092`                                           | コミュニティシートの `gid`                   |
+| `SHEET_GID_BOOTHS`      | `688005375`                                            | ブースシートの `gid`                         |
 | `UPSTREAM_TIMEOUT_MS`   | `3000`                                                 | Google への fetch タイムアウト（1回あたり）  |
 | `CACHE_TTL_SECONDS`     | `60`                                                   | エッジキャッシュの TTL                       |
 
@@ -74,7 +77,7 @@ KV バインディング: `LAST_GOOD`（namespace は任意名）。
 | `Access-Control-Allow-Origin`   | `*`                                                          |
 | `Access-Control-Allow-Methods`  | `GET, OPTIONS`                                               |
 | `Access-Control-Allow-Headers`  | `Content-Type, If-None-Match`                                |
-| `Access-Control-Expose-Headers` | `ETag, X-Timetable-Stale`                                    |
+| `Access-Control-Expose-Headers` | `ETag, X-Timetable-Stale, X-Booths-Stale`                    |
 | `X-Timetable-Stale`             | `true`（§7 のフォールバック時のみ付与）                      |
 
 - リクエストに `If-None-Match` があり、現在の `version` と一致するとき、`304` を本文なしで返す（`ETag` と `Cache-Control` は付ける）
@@ -82,6 +85,16 @@ KV バインディング: `LAST_GOOD`（namespace は任意名）。
 ### `OPTIONS /v1/events/{eventId}/timetable`
 
 - `204`、CORS ヘッダーのみ。`Access-Control-Max-Age: 86400`
+
+### `GET /v1/events/{eventId}/booths`
+
+- ブースの一覧（§6-4 の `BoothList`）を返す。ブースシートとコミュニティシートの2枚を読み、タイムテーブルシートは読まない
+- `eventId` の検証、ヘッダー、ETag と 304、CORS は `timetable` と同じ。ただしフォールバック時に付くのは `X-Booths-Stale: true`（`X-Timetable-Stale` は付かない）
+- KV `LAST_GOOD` にはキー `booths` で別に保存する。タイムテーブルとブースのフォールバックは互いに独立
+
+### `OPTIONS /v1/events/{eventId}/booths`
+
+- `timetable` と同じ
 
 ### `GET /healthz`
 
@@ -180,6 +193,26 @@ ID は人が読めるスラッグ（`kofu-rb`、`jawsug-yamanashi` など）を�
 
 除外した行は `console.warn` に `{ reason, rowNumber, id }` の形で出す（wrangler tail で確認できるようにする）。レスポンスには含めず、エラーにもしない。**1行の不備で全体が落ちないこと**を優先する。
 
+### 5-7. ブースシート
+
+ブースシート（`SHEET_GID_BOOTHS`）の列。パース規則は §5-2 と共通。
+
+| 列            | 必須 | 解釈                                                                                |
+| ------------- | ---- | ----------------------------------------------------------------------------------- |
+| `number`      | 必須 | ブース番号。自由な文字列（`1`、`A-1` など）。空なら行を除外（`empty_booth_number`） |
+| `communities` |      | 改行区切りのコミュニティ ID。解決の規則は §5-5 と同じ                               |
+| `title`       |      | 出展タイトル。空なら null                                                           |
+| `description` |      | 空なら null。それ以外は文字列のまま（Markdown）。改行は `\n` に正規化する           |
+
+ヘッダーに `number` が無い場合は CSV 全体を不正とし、上流失敗として扱う。
+
+- 並びは**シートの行順**。番号では並べ替えない（会場の動線順など、運営が意図した順に並べられるようにする）
+- `number` が重複したときは**後の行を採用**し、後の行の位置に並べる。前の行は warn（`duplicate_booth_number`）して除外する
+- `communities` が空のブースも残す（運営受付、コミュニティ以外の出展など）
+- 1つのコミュニティが複数のブースから参照されてもよい。それぞれに独立して埋め込む
+
+ブースはコミュニティシートの列ではなく独立したシートにしている。ブースは「そのイベントでどこに出るか」という割り当てで、コミュニティの台帳とは性質が違うため。1コミュニティ複数ブース、コミュニティを持たないブース、ブース固有の情報（タイトル・説明）を表せるのもこの形にした理由である。
+
 ## 6. 出力（JSON）の仕様
 
 ### 6-1. 型
@@ -237,6 +270,27 @@ export type Session = {
 };
 ```
 
+### 6-1b. ブース一覧の型
+
+```ts
+export type Booth = {
+  number: string; // シートに書かれたまま。一意
+  title: string | null;
+  communities: Community[]; // コミュニティシートから連結済み。空配列もありうる
+  descriptionMarkdown: string | null;
+};
+
+export type BoothList = {
+  schemaVersion: 1;
+  version: string; // event と booths の正規化 JSON の SHA-256 先頭12桁（16進）
+  updatedAt: string;
+  event: Event;
+  booths: Booth[]; // ブースシートの行順
+};
+```
+
+`version` の計算は §6-2 と同じ方法で、対象が `{ event, booths }` になる。
+
 ### 6-2. 整合性の保証
 
 - `id` は一意。重複したときは**後の行を採用**し、前の行を除外して warn
@@ -262,7 +316,7 @@ export type Session = {
 
 処理順:
 
-1. 2枚のシートを取得してパースし、コミュニティを連結して `Timetable` を組み立てる
+1. 2枚のシートを取得してパースし、コミュニティを連結して `Timetable` を組み立てる（ブース一覧はブースシートとコミュニティシートから `BoothList` を組み立てる。以下も同様で、KV のキーとヘッダー名だけが違う）
 2. 成功したら KV `LAST_GOOD` に `{ body: string, version: string, fetchedAt: string }` を書く（`expirationTtl` なし。書き込み失敗はログに出して無視）
 3. 失敗（上流失敗、または CSV 不正）したら KV から最後の成功分を読み、それを返す。`X-Timetable-Stale: true` を付け、`Cache-Control` は `public, max-age=0, s-maxage=10` に短縮する
 4. KV にも無ければ `502` と `{"error":"upstream_unavailable"}`
@@ -292,6 +346,7 @@ vitest（workers pool）で以下を最低限カバーする。上流はテス�
 - **version**: 同じ CSV から2回生成しても同じ、1文字変えると変わる、`updatedAt` の違いで変わらない
 - **HTTP**: `If-None-Match` 一致で 304、CORS ヘッダー、OPTIONS が 204、未知パスが 404、eventId 不一致が 404、`POST` が 405
 - **フォールバック**: 上流 500 → KV から返して `X-Timetable-Stale: true`、KV も空 → 502、**コミュニティシートだけ 500 でも全体が stale になる**
+- **ブース**: ゴールデン（`fixtures/booths.csv` + `fixtures/communities.csv` → `fixtures/sample-booths.json`）、行順を保つ、`number` 空は除外、`number` 重複は後勝ち、未知 ID は落としてブースは残す、コミュニティ空のブースも残る、タイムテーブルシートを取得しない、フォールバックは `X-Booths-Stale`、KV はタイムテーブルと混ざらない
 
 ## 10. 開発・デプロイ
 
@@ -306,7 +361,7 @@ vitest（workers pool）で以下を最低限カバーする。上流はテス�
 - 時刻の自動補完・自動採番（シートに全行 `start` / `end` を書く運用）
 - 画像のホスティング、リサイズ、存在確認
 - 登壇者のプロフィール、登壇者の ID による参照
-- コミュニティ単体を返すエンドポイント（`/v1/events/{id}/communities`）。コミュニティ一覧ページやブース情報が必要になった時点で、独立したリソースとして足す。タイムテーブルのレスポンスに台帳全体を同梱することはしない
+- コミュニティ単体を返すエンドポイント（`/v1/events/{id}/communities`）。コミュニティ一覧ページが必要になった時点で、独立したリソースとして足す。タイムテーブルのレスポンスに台帳全体を同梱することはしない（ブース情報は `/v1/events/{id}/booths` として独立したリソースにした）
 - 多言語
 
 ## 12. 受け入れ条件

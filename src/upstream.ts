@@ -81,7 +81,19 @@ export async function fetchSheetCsvs(env: Env): Promise<SheetCsvs> {
   return { timetable, communities };
 }
 
-/** ブース一覧はコミュニティシートだけで組み立てられるので、タイムテーブルシートは取らない。 */
-export function fetchCommunitiesCsv(env: Env): Promise<string> {
-  return fetchSheet(env, env.SHEET_GID_COMMUNITIES);
+export type BoothCsvs = {
+  booths: string;
+  communities: string;
+};
+
+/**
+ * ブースシートとコミュニティシートを並行に取得する。扱いは `fetchSheetCsvs` と同じで、
+ * 片方でも失敗したら全体を上流失敗とする。タイムテーブルシートは取らない。
+ */
+export async function fetchBoothCsvs(env: Env): Promise<BoothCsvs> {
+  const [booths, communities] = await Promise.all([
+    fetchSheet(env, env.SHEET_GID_BOOTHS),
+    fetchSheet(env, env.SHEET_GID_COMMUNITIES),
+  ]);
+  return { booths, communities };
 }

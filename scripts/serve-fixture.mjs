@@ -1,4 +1,4 @@
-// fixtures/timetable.csv をローカル HTTP で配信する。
+// fixtures/*.csv をローカル HTTP で配信する。
 // `wrangler dev` の SHEET_PUB_BASE をこのサーバーに向けて動作確認するためのもの。
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
@@ -9,6 +9,7 @@ const PORT = Number(process.env.PORT ?? 8788);
 const FIXTURE_BY_GID = {
   0: "timetable.csv",
   1223957092: "communities.csv",
+  688005375: "booths.csv",
 };
 
 const server = createServer((request, response) => {

@@ -5,7 +5,7 @@ import { parseCommunities } from "./communities";
 import { InvalidCsvError } from "./sheet";
 import { buildEvent, buildTimetable } from "./timetable";
 import type { Env, LastGood } from "./types";
-import { fetchCommunitiesCsv, fetchSheetCsvs } from "./upstream";
+import { fetchBoothCsvs, fetchSheetCsvs } from "./upstream";
 
 const FRESH_CACHE_CONTROL = "public, max-age=30, s-maxage=60";
 const STALE_CACHE_CONTROL = "public, max-age=0, s-maxage=10";
@@ -45,8 +45,13 @@ const RESOURCES: Record<string, Resource> = {
     lastGoodKey: "booths",
     staleHeader: "X-Booths-Stale",
     async build(env) {
-      const csv = await fetchCommunitiesCsv(env);
-      return buildBooths(csv, buildEvent(env), toJstIsoString(new Date()));
+      const csvs = await fetchBoothCsvs(env);
+      return buildBooths(
+        csvs.booths,
+        buildEvent(env),
+        toJstIsoString(new Date()),
+        parseCommunities(csvs.communities),
+      );
     },
   },
 };

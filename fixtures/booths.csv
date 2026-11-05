@@ -1,0 +1,15 @@
+note,communities, number ,title,description
+,,0,総合受付,"受付は**正面入口**の右手。"
+相席・未知 ID・同一セル内の重複,"kofu-rb
+yamanashi-js
+no-such
+ kofu-rb ",A-1,Ruby と JS の相席ブース,"## 展示内容
+
+- もくもく体験
+- ""ステッカー""配布"
+番号順ではなく行順で並ぶ。title と description が空なら null,http-icon,10,,
+後の行で差し替えられる,techmujin-committee,2,古いタイトル,
+番号が空なので除外される,kofu-rb,,番号なし,
+番号の重複は後勝ちで、この位置に並ぶ,techmujin-committee,2,実行委員会ブース,
+同じコミュニティが複数のブースに出る。前後の空白は除去,kofu-rb, 3 ,,
+

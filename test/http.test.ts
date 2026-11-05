@@ -1,15 +1,25 @@
 import { env, exports } from "cloudflare:workers";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LastGood } from "../src/types";
-import { COMMUNITIES_CSV, SAMPLE_RESPONSE, TIMETABLE_CSV, withoutVolatileFields } from "./helpers";
+import {
+  BOOTHS_CSV,
+  COMMUNITIES_CSV,
+  SAMPLE_BOOTHS,
+  SAMPLE_RESPONSE,
+  TIMETABLE_CSV,
+  withoutVolatileFields,
+} from "./helpers";
 
 const BASE = "https://timetable.example.com";
 const TIMETABLE_URL = `${BASE}/v1/events/techmujin-2026/timetable`;
+const BOOTHS_URL = `${BASE}/v1/events/techmujin-2026/booths`;
 const LAST_GOOD_KEY = "timetable";
+const BOOTHS_LAST_GOOD_KEY = "booths";
 
 const request = (url: string, init?: RequestInit) => exports.default.fetch(new Request(url, init));
 
 const GID_COMMUNITIES = "gid=1223957092";
+const GID_BOOTHS = "gid=688005375";
 
 const csv = (body: string) => new Response(body, { headers: { "Content-Type": "text/csv" } });
 
@@ -17,22 +27,34 @@ const csv = (body: string) => new Response(body, { headers: { "Content-Type": "t
  * 上流はシートごとに別 URL なので、gid でどちらのシートかを見分けて応答する。
  * `sheets` に無い gid は 500 を返し、片方だけ落ちた状況を作れるようにする。
  */
-function stubUpstream(sheets: { timetable?: () => Response; communities?: () => Response }): void {
+type Sheets = {
+  timetable?: () => Response;
+  communities?: () => Response;
+  booths?: () => Response;
+};
+
+function stubUpstream(sheets: Sheets): void {
   vi.stubGlobal(
     "fetch",
     vi.fn((input: RequestInfo | URL) => {
       const url = input instanceof Request ? input.url : String(input);
-      const make = url.includes(GID_COMMUNITIES) ? sheets.communities : sheets.timetable;
+      const make = url.includes(GID_COMMUNITIES)
+        ? sheets.communities
+        : url.includes(GID_BOOTHS)
+          ? sheets.booths
+          : sheets.timetable;
       if (!make) return Promise.resolve(new Response("boom", { status: 500 }));
       return Promise.resolve(make());
     }),
   );
 }
 
-const bothSheets = {
+const bothSheets: Sheets = {
   timetable: () => csv(TIMETABLE_CSV),
   communities: () => csv(COMMUNITIES_CSV),
 };
+
+const allSheets: Sheets = { ...bothSheets, booths: () => csv(BOOTHS_CSV) };
 
 /** 最初の `failures` 回だけ 500 を返し、以降は `body` を返す。リトライの検証用。 */
 function flaky(body: string, failures: number): () => Response {
@@ -41,9 +63,9 @@ function flaky(body: string, failures: number): () => Response {
 }
 
 /** KV への書き込みは ctx.waitUntil 経由なので、反映されるまで待つ。 */
-async function waitForLastGood(): Promise<LastGood> {
+async function waitForLastGood(key = LAST_GOOD_KEY): Promise<LastGood> {
   for (let attempt = 0; attempt < 50; attempt += 1) {
-    const stored = await env.LAST_GOOD.get<LastGood>(LAST_GOOD_KEY, "json");
+    const stored = await env.LAST_GOOD.get<LastGood>(key, "json");
     if (stored) return stored;
     await scheduler.wait(10);
   }
@@ -52,6 +74,7 @@ async function waitForLastGood(): Promise<LastGood> {
 
 beforeEach(async () => {
   await env.LAST_GOOD.delete(LAST_GOOD_KEY);
+  await env.LAST_GOOD.delete(BOOTHS_LAST_GOOD_KEY);
   vi.spyOn(console, "warn").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
@@ -83,7 +106,9 @@ describe("GET /v1/events/{eventId}/timetable", () => {
     expect(response.headers.get("Access-Control-Allow-Headers")).toBe(
       "Content-Type, If-None-Match",
     );
-    expect(response.headers.get("Access-Control-Expose-Headers")).toBe("ETag, X-Timetable-Stale");
+    expect(response.headers.get("Access-Control-Expose-Headers")).toBe(
+      "ETag, X-Timetable-Stale, X-Booths-Stale",
+    );
   });
 
   it("If-None-Match が一致すれば 304 を本文なしで返す", async () => {
@@ -108,6 +133,109 @@ describe("GET /v1/events/{eventId}/timetable", () => {
     expect(response.status).toBe(404);
     expect(await response.json()).toEqual({ error: "event_not_found" });
     expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
+  });
+});
+
+describe("GET /v1/events/{eventId}/booths", () => {
+  it("200 とスキーマどおりの本文を返す", async () => {
+    stubUpstream(allSheets);
+    const response = await request(BOOTHS_URL);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("application/json; charset=utf-8");
+    expect(response.headers.get("Cache-Control")).toBe("public, max-age=30, s-maxage=60");
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
+    expect(response.headers.get("X-Booths-Stale")).toBeNull();
+
+    const body = await response.json<Record<string, unknown>>();
+    expect(withoutVolatileFields(body)).toEqual(withoutVolatileFields(SAMPLE_BOOTHS));
+    expect(response.headers.get("ETag")).toBe(`"${String(body.version)}"`);
+    await waitForLastGood(BOOTHS_LAST_GOOD_KEY);
+  });
+
+  it("ブースシートとコミュニティシートだけを取得し、タイムテーブルシートは取らない", async () => {
+    stubUpstream(allSheets);
+    await request(BOOTHS_URL);
+    const urls = vi
+      .mocked(globalThis.fetch)
+      .mock.calls.map(([input]) => (input instanceof Request ? input.url : input.toString()));
+    expect(urls).toHaveLength(2);
+    expect(urls.some((url) => url.includes(GID_BOOTHS))).toBe(true);
+    expect(urls.some((url) => url.includes(GID_COMMUNITIES))).toBe(true);
+    await waitForLastGood(BOOTHS_LAST_GOOD_KEY);
+  });
+
+  it("If-None-Match が一致すれば 304", async () => {
+    stubUpstream(allSheets);
+    const first = await request(BOOTHS_URL);
+    const etag = first.headers.get("ETag") ?? "";
+    const second = await request(BOOTHS_URL, { headers: { "If-None-Match": etag } });
+    expect(second.status).toBe(304);
+    expect(await second.text()).toBe("");
+  });
+
+  it("OPTIONS は 204", async () => {
+    const response = await request(BOOTHS_URL, { method: "OPTIONS" });
+    expect(response.status).toBe(204);
+    expect(response.headers.get("Access-Control-Max-Age")).toBe("86400");
+  });
+
+  it("eventId が一致しなければ 404 event_not_found", async () => {
+    const response = await request(`${BASE}/v1/events/other-event/booths`);
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "event_not_found" });
+  });
+
+  it("上流が 500 のとき KV の最後の成功分を X-Booths-Stale つきで返す", async () => {
+    stubUpstream(allSheets);
+    const freshBody = await (await request(BOOTHS_URL)).text();
+    const stored = await waitForLastGood(BOOTHS_LAST_GOOD_KEY);
+    expect(stored.body).toBe(freshBody);
+
+    stubUpstream({});
+    const stale = await request(BOOTHS_URL);
+    expect(stale.status).toBe(200);
+    expect(stale.headers.get("X-Booths-Stale")).toBe("true");
+    expect(stale.headers.get("X-Timetable-Stale")).toBeNull();
+    expect(stale.headers.get("Cache-Control")).toBe("public, max-age=0, s-maxage=10");
+    expect(await stale.text()).toBe(freshBody);
+  });
+
+  it("コミュニティシートだけ 500 でも全体が stale になる", async () => {
+    stubUpstream(allSheets);
+    await request(BOOTHS_URL);
+    const stored = await waitForLastGood(BOOTHS_LAST_GOOD_KEY);
+
+    stubUpstream({ booths: () => csv(BOOTHS_CSV) });
+    const response = await request(BOOTHS_URL);
+    expect(response.headers.get("X-Booths-Stale")).toBe("true");
+    expect(await response.text()).toBe(stored.body);
+  });
+
+  it("ブースシートに必須列が無ければフォールバックし、KV も空なら 502", async () => {
+    stubUpstream({ ...allSheets, booths: () => csv("title\r\nx\r\n") });
+    const response = await request(BOOTHS_URL);
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ error: "upstream_unavailable" });
+  });
+
+  it("タイムテーブルとブースの KV は混ざらない", async () => {
+    stubUpstream(allSheets);
+    const timetableBody = await (await request(TIMETABLE_URL)).text();
+    await waitForLastGood(LAST_GOOD_KEY);
+
+    stubUpstream({});
+    const booths = await request(BOOTHS_URL);
+    expect(booths.status).toBe(502);
+    const timetable = await request(TIMETABLE_URL);
+    expect(await timetable.text()).toBe(timetableBody);
+  });
+
+  it("ブースシートが落ちてもタイムテーブルは fresh のまま", async () => {
+    stubUpstream(bothSheets);
+    const response = await request(TIMETABLE_URL);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("X-Timetable-Stale")).toBeNull();
+    await waitForLastGood();
   });
 });
 

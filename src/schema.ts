@@ -109,13 +109,19 @@ export type Timetable = {
 
 /**
  * ブース。`GET /v1/events/{eventId}/booths` で返る。
- * ブース番号はコミュニティシートの `booth` 列から取り、同じ番号のコミュニティは1つにまとまる。
+ * ブースシートの1行に対応し、コミュニティはタイムテーブルと同じく展開済みで入る。
  */
 export type Booth = {
-  /** ブース番号。シートに書かれた文字列そのまま（`"1"` や `"A-1"` など） */
+  /** ブース番号。シートに書かれた文字列そのまま（`"1"` や `"A-1"` など）。一意 */
   number: string;
-  /** そのブースを出すコミュニティ。シートの行順。1件以上 */
+  /** 出展タイトル。未設定なら null */
+  title: string | null;
+  /**
+   * そのブースを出すコミュニティ。シートに書かれた順。
+   * 運営受付のようにコミュニティを持たないブースでは空配列
+   */
   communities: Community[];
+  descriptionMarkdown: string | null;
 };
 
 export type BoothList = {
@@ -126,6 +132,6 @@ export type BoothList = {
   /** レスポンスを生成した時刻。ISO 8601、+09:00 */
   updatedAt: string;
   event: Event;
-  /** ブース番号順（数字部分は数値として比べる。`2` < `10` < `A-1`） */
+  /** ブースシートの行順 */
   booths: Booth[];
 };

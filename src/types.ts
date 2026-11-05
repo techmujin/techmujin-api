@@ -14,6 +14,7 @@ export type Env = {
   SHEET_PUB_BASE: string;
   SHEET_GID_TIMETABLE: string | number;
   SHEET_GID_COMMUNITIES: string | number;
+  SHEET_GID_BOOTHS: string | number;
   UPSTREAM_TIMEOUT_MS: string | number;
   CACHE_TTL_SECONDS: string | number;
   LAST_GOOD: KVNamespace;

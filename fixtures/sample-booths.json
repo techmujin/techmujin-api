@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "version": "000000000000",
+  "updatedAt": "2026-11-01T00:00:00+09:00",
+  "event": {
+    "id": "techmujin-2026",
+    "title": "テック無尽 2026",
+    "date": "2026-11-22",
+    "timezone": "Asia/Tokyo",
+    "venue": "山梨大学 甲府キャンパス 共創環境棟 治ホール",
+    "url": null
+  },
+  "booths": [
+    {
+      "number": "0",
+      "title": "総合受付",
+      "communities": [],
+      "descriptionMarkdown": "受付は**正面入口**の右手。"
+    },
+    {
+      "number": "A-1",
+      "title": "Ruby と JS の相席ブース",
+      "communities": [
+        {
+          "id": "kofu-rb",
+          "name": "甲府.rb",
+          "url": "https://example.com/kofurb",
+          "iconUrl": "https://example.com/icons/kofurb.png",
+          "descriptionMarkdown": "## 甲府.rb\n\n- Ruby, その周辺\n- \"毎月\"開催"
+        },
+        {
+          "id": "yamanashi-js",
+          "name": "YamanashiJS",
+          "url": null,
+          "iconUrl": "https://example.com/icons/yamanashijs.png",
+          "descriptionMarkdown": null
+        }
+      ],
+      "descriptionMarkdown": "## 展示内容\n\n- もくもく体験\n- \"ステッカー\"配布"
+    },
+    {
+      "number": "10",
+      "title": null,
+      "communities": [
+        {
+          "id": "http-icon",
+          "name": "HTTPアイコンのコミュニティ",
+          "url": "http://example.com/insecure",
+          "iconUrl": null,
+          "descriptionMarkdown": "url は http でも採用、icon は https のみ"
+        }
+      ],
+      "descriptionMarkdown": null
+    },
+    {
+      "number": "2",
+      "title": "実行委員会ブース",
+      "communities": [
+        {
+          "id": "techmujin-committee",
+          "name": "テック無尽実行委員会",
+          "url": "https://example.com/techmujin",
+          "iconUrl": "https://example.com/icons/techmujin.png",
+          "descriptionMarkdown": "実行委員会のダミー説明。"
+        }
+      ],
+      "descriptionMarkdown": null
+    },
+    {
+      "number": "3",
+      "title": null,
+      "communities": [
+        {
+          "id": "kofu-rb",
+          "name": "甲府.rb",
+          "url": "https://example.com/kofurb",
+          "iconUrl": "https://example.com/icons/kofurb.png",
+          "descriptionMarkdown": "## 甲府.rb\n\n- Ruby, その周辺\n- \"毎月\"開催"
+        }
+      ],
+      "descriptionMarkdown": null
+    }
+  ]
+}

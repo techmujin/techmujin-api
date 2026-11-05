@@ -1,10 +1,14 @@
+import boothsCsv from "../fixtures/booths.csv?raw";
 import communitiesCsv from "../fixtures/communities.csv?raw";
+import sampleBooths from "../fixtures/sample-booths.json";
 import sampleResponse from "../fixtures/sample-response.json";
 import timetableCsv from "../fixtures/timetable.csv?raw";
 
 export const TIMETABLE_CSV = timetableCsv;
 export const COMMUNITIES_CSV = communitiesCsv;
 export const SAMPLE_RESPONSE = sampleResponse as unknown as Record<string, unknown>;
+export const BOOTHS_CSV = boothsCsv;
+export const SAMPLE_BOOTHS = sampleBooths as unknown as Record<string, unknown>;
 
 export const EVENT = {
   id: "techmujin-2026",

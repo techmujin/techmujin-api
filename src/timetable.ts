@@ -1,9 +1,9 @@
+import { resolveCommunities } from "./communities";
 import type { CommunityLedger } from "./communities";
 import {
   isValidId,
   normalizeNewlines,
   parseBoolean,
-  parseCommunityIds,
   parseKind,
   parseLinks,
   parsePeople,
@@ -14,25 +14,10 @@ import {
 } from "./parse";
 import { nullIfBlank, readSheet, warnSkip } from "./sheet";
 import type { RowReader } from "./sheet";
-import type { Community, Event, Session, SessionType, Timetable, TrackId } from "./types";
+import type { Event, Session, SessionType, Timetable, TrackId } from "./types";
 import { computeVersion } from "./version";
 
 const REQUIRED_HEADERS = ["id", "kind", "title", "start", "end"] as const;
-
-/**
- * `communities` セルの ID を台帳で解決する。
- * 引けない ID はその1件だけ落とし、Session 自体は残す（§5-5）。
- */
-function resolveCommunities(cell: string, ledger: CommunityLedger, rowNumber: number): Community[] {
-  return parseCommunityIds(cell).flatMap((id) => {
-    const community = ledger.get(id);
-    if (!community) {
-      warnSkip("unknown_community_id", rowNumber, id);
-      return [];
-    }
-    return [community];
-  });
-}
 
 /**
  * `type` セルを SessionType にする。必須ではないので、読めなくても行は落とさず null にする。
