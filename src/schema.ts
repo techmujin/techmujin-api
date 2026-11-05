@@ -1,5 +1,5 @@
 /**
- * `GET /v1/events/{eventId}/timetable` が返す JSON の型。
+ * `GET /v1/events/{eventId}/timetable` と `GET /v1/events/{eventId}/booths` が返す JSON の型。
  *
  * このファイルは API の公開契約であり、フロントエンドや任意のアプリ実装者が
  * そのまま参照できるよう、ランタイムコードも外部依存も持たない。
@@ -105,4 +105,27 @@ export type Timetable = {
   event: Event;
   /** `startsAt` 昇順。時間帯の重なりは無い */
   sessions: Session[];
+};
+
+/**
+ * ブース。`GET /v1/events/{eventId}/booths` で返る。
+ * ブース番号はコミュニティシートの `booth` 列から取り、同じ番号のコミュニティは1つにまとまる。
+ */
+export type Booth = {
+  /** ブース番号。シートに書かれた文字列そのまま（`"1"` や `"A-1"` など） */
+  number: string;
+  /** そのブースを出すコミュニティ。シートの行順。1件以上 */
+  communities: Community[];
+};
+
+export type BoothList = {
+  /** `Timetable.schemaVersion` と同じく、破壊的変更で上がる */
+  schemaVersion: 1;
+  /** `event` と `booths` から計算した内容ハッシュ。レスポンスの `ETag` と同じ値 */
+  version: string;
+  /** レスポンスを生成した時刻。ISO 8601、+09:00 */
+  updatedAt: string;
+  event: Event;
+  /** ブース番号順（数字部分は数値として比べる。`2` < `10` < `A-1`） */
+  booths: Booth[];
 };

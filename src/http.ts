@@ -2,7 +2,7 @@ export const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, If-None-Match",
-  "Access-Control-Expose-Headers": "ETag, X-Timetable-Stale",
+  "Access-Control-Expose-Headers": "ETag, X-Timetable-Stale, X-Booths-Stale",
 };
 
 export const JSON_CONTENT_TYPE = "application/json; charset=utf-8";
